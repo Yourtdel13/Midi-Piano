@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#05070f">
+<title>MIDI 钢琴</title>
+<link rel="stylesheet" href="style.css?v=24">
+</head>
+<body>
+<canvas id="stage"></canvas>
+  <div id="debugBox" class="debug-box hidden"></div>
+
+<header id="topbar">
+  <div class="brand"><span class="dot"></span>MIDI 钢琴</div>
+  <div class="actions">
+    <button id="btnMidi" class="chip">♪ 导入 MIDI</button>
+    <button id="btnBg" class="chip">🖼 背景</button>
+          <button id="btnScore" class="chip" aria-label="导入乐谱">🎼 乐谱</button>
+  </div>
+</header>
+<button id="btnLook" class="chip icon look-fab" aria-label="外观设置">⚙</button>
+
+<div id="home" class="home">
+  <div class="home-aurora a1"></div>
+  <div class="home-aurora a2"></div>
+  <div class="home-aurora a3"></div>
+  <div class="home-notes" aria-hidden="true">
+    <span>♪</span><span>♫</span><span>♩</span><span>♬</span><span>♪</span><span>♫</span>
+  </div>
+  <div class="home-inner">
+    <div class="home-kicker">MIDI · PIANO</div>
+    <h1 class="home-title">MIDI 钢琴</h1>
+    <p class="home-sub">把 MIDI 变成一场会发光的雨</p>
+    <div class="home-actions">
+      <button id="homePlay" class="home-btn primary">
+        <span class="hb-ico">▶</span>
+        <span class="hb-txt"><b>开始播放</b><em>载入示例曲，边听边看</em></span>
+      </button>
+      <button id="homeFree" class="home-btn">
+        <span class="hb-ico">🎹</span>
+        <span class="hb-txt"><b>自由弹奏</b><em>点琴键发声，音符向上飞</em></span>
+      </button>
+      <button id="homeSettings" class="home-btn">
+        <span class="hb-ico">⚙</span>
+        <span class="hb-txt"><b>设置</b><em>形状 · 特效 · 功能 · 调试</em></span>
+      </button>
+      <button id="homeExit" class="home-btn ghost">
+        <span class="hb-ico">✕</span>
+        <span class="hb-txt"><b>退出</b><em>关闭应用</em></span>
+      </button>
+    </div>
+    <div class="home-foot">DSH · v3.5</div>
+  </div>
+</div>
+
+<div id="freeHint" class="free-hint hidden"><span id="freeHintText">自由弹奏中 · 点击琴键发声</span><button id="freeHintClose" class="fh-x" aria-label="关闭提示">✕</button></div>
+
+<div id="hud">
+  <div id="songTitle">还没有加载 MIDI</div>
+  <div id="songMeta">点右上角「导入 MIDI」开始</div>
+  <div id="songTags">
+    <span id="songKey" class="tag dim">调式未知</span>
+    <span id="pedal" class="tag pedal dim" title="此 MIDI 没有踏板事件">Ped.</span>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="sheetBack" class="sheet-back hidden"></div>
+<section id="sheet" class="sheet hidden" aria-label="设置">
+  <div class="handle"></div>
+  <div class="sheet-head">
+    <h2>设置</h2>
+    <button id="sheetClose" class="sheet-close" aria-label="关闭">✕</button>
+  </div>
+
+  <div class="sheet-tabs" id="sheetTabs" role="tablist">
+    <button class="tab" data-tab="shape" role="tab">音符形状</button>
+    <button class="tab" data-tab="fx" role="tab">特效类</button>
+    <button class="tab" data-tab="func" role="tab">功能类</button>
+    <button class="tab" data-tab="debug" role="tab">调试类</button>
+  </div>
+
+  <div class="sheet-pane" data-pane="shape">
+    <div class="opt-row" id="shapeOpts">
+      <button class="opt" data-shape="capsule">胶囊</button>
+      <button class="opt" data-shape="rounded">圆角</button>
+      <button class="opt" data-shape="diamond">菱形</button>
+      <button class="opt" data-shape="orb">圆珠</button>
+      <button class="opt" data-shape="beam">流光</button>
+    </div>
+  </div>
+
+  <div class="sheet-pane" data-pane="fx">
+    <div class="sheet-label">命中特效</div>
+    <div class="opt-row" id="fxOpts">
+      <button class="opt" data-fx="splash">水花</button>
+      <button class="opt" data-fx="spark">火花</button>
+      <button class="opt" data-fx="flame">火焰</button>
+      <button class="opt" data-fx="sakura">樱花</button>
+      <button class="opt" data-fx="maple">枫叶</button>
+      <button class="opt" data-fx="cyber">赛博</button>
+      <button class="opt" data-fx="stardust">星尘</button>
+      <button class="opt" data-fx="none">关闭</button>
+    </div>
+    <div class="sheet-label">下落配色</div>
+    <div class="opt-row" id="gradOpts">
+      <button class="opt" data-grad="random">随机</button>
+      <button class="opt" data-grad="hands">左右手</button>
+    </div>
+    <div class="sheet-label">音符泛光 <span class="sub">让下落音符自带辉光</span></div>
+    <div class="sheet-label">发光线条颜色</div>
+    <div class="opt-row scroll" id="lineOpts"><button class="opt" data-line="none">关</button><button class="opt" data-line="white">白</button><button class="opt" data-line="gold">金</button><button class="opt" data-line="blue">蓝</button><button class="opt" data-line="teal">青</button><button class="opt" data-line="purple">紫</button><button class="opt" data-line="pink">粉</button><button class="opt" data-line="red">红</button><button class="opt" data-line="green">绿</button><button class="opt" data-line="orange">橙</button></div>
+    <div class="sheet-label">雾气颜色</div>
+    <div class="opt-row scroll" id="mistOpts"><button class="opt" data-mist="none">关</button><button class="opt" data-mist="white">白</button><button class="opt" data-mist="gold">金</button><button class="opt" data-mist="blue">蓝</button><button class="opt" data-mist="teal">青</button><button class="opt" data-mist="purple">紫</button><button class="opt" data-mist="pink">粉</button><button class="opt" data-mist="red">红</button><button class="opt" data-mist="green">绿</button><button class="opt" data-mist="orange">橙</button></div>
+    <div class="sheet-label">左轨泛光颜色</div>
+    <div class="opt-row scroll" id="glowLOpts"><button class="opt" data-glowl="none">关</button><button class="opt" data-glowl="white">白</button><button class="opt" data-glowl="gold">金</button><button class="opt" data-glowl="blue">蓝</button><button class="opt" data-glowl="teal">青</button><button class="opt" data-glowl="purple">紫</button><button class="opt" data-glowl="pink">粉</button><button class="opt" data-glowl="red">红</button><button class="opt" data-glowl="green">绿</button><button class="opt" data-glowl="orange">橙</button></div>
+    <div class="sheet-label">右轨泛光颜色</div>
+    <div class="opt-row scroll" id="glowROpts"><button class="opt" data-glowr="none">关</button><button class="opt" data-glowr="white">白</button><button class="opt" data-glowr="gold">金</button><button class="opt" data-glowr="blue">蓝</button><button class="opt" data-glowr="teal">青</button><button class="opt" data-glowr="purple">紫</button><button class="opt" data-glowr="pink">粉</button><button class="opt" data-glowr="red">红</button><button class="opt" data-glowr="green">绿</button><button class="opt" data-glowr="orange">橙</button></div>
+    <div class="sheet-label">泛光强度 <span class="sub" id="glowLevelVal">Medium</span></div>
+    <input id="glowLevel" class="amb-range" type="range" min="0" max="3" step="1" value="1" aria-label="泛光强度">
+    <div class="sheet-label">左手轨道颜色</div>
+    <div class="opt-row swatch-row" id="lcOpts">
+      <button class="opt swatch" data-lcolor="red"><i style="--c1:#ffe9ee;--c2:#ff3d5a"></i>红</button>
+      <button class="opt swatch" data-lcolor="orange"><i style="--c1:#fff0e0;--c2:#ff8a2b"></i>橙</button>
+      <button class="opt swatch" data-lcolor="gold"><i style="--c1:#fff7dc;--c2:#ffc83d"></i>金</button>
+      <button class="opt swatch" data-lcolor="green"><i style="--c1:#eaffea;--c2:#3ddc84"></i>绿</button>
+      <button class="opt swatch" data-lcolor="teal"><i style="--c1:#e2fffa;--c2:#1fd6b4"></i>青</button>
+      <button class="opt swatch" data-lcolor="blue"><i style="--c1:#e6f4ff;--c2:#2f9bff"></i>蓝</button>
+      <button class="opt swatch" data-lcolor="purple"><i style="--c1:#f4e8ff;--c2:#a45bff"></i>紫</button>
+      <button class="opt swatch" data-lcolor="pink"><i style="--c1:#ffeafa;--c2:#ff5fb0"></i>粉</button>
+      <button class="opt swatch" data-lcolor="white"><i style="--c1:#ffffff;--c2:#c9d4ea"></i>白</button>
+    </div>
+    <div class="sheet-label">右手轨道颜色</div>
+    <div class="opt-row swatch-row" id="rcOpts">
+      <button class="opt swatch" data-rcolor="red"><i style="--c1:#ffe9ee;--c2:#ff3d5a"></i>红</button>
+      <button class="opt swatch" data-rcolor="orange"><i style="--c1:#fff0e0;--c2:#ff8a2b"></i>橙</button>
+      <button class="opt swatch" data-rcolor="gold"><i style="--c1:#fff7dc;--c2:#ffc83d"></i>金</button>
+      <button class="opt swatch" data-rcolor="green"><i style="--c1:#eaffea;--c2:#3ddc84"></i>绿</button>
+      <button class="opt swatch" data-rcolor="teal"><i style="--c1:#e2fffa;--c2:#1fd6b4"></i>青</button>
+      <button class="opt swatch" data-rcolor="blue"><i style="--c1:#e6f4ff;--c2:#2f9bff"></i>蓝</button>
+      <button class="opt swatch" data-rcolor="purple"><i style="--c1:#f4e8ff;--c2:#a45bff"></i>紫</button>
+      <button class="opt swatch" data-rcolor="pink"><i style="--c1:#ffeafa;--c2:#ff5fb0"></i>粉</button>
+      <button class="opt swatch" data-rcolor="white"><i style="--c1:#ffffff;--c2:#c9d4ea"></i>白</button>
+    </div>
+    <div class="sheet-label">背景氛围</div>
+    <div class="opt-row scroll" id="ambOpts">
+      <button class="opt" data-amb="none">关</button>
+      <button class="opt" data-amb="spark">火花</button>
+      <button class="opt" data-amb="calm">幽静</button>
+      <button class="opt" data-amb="snow">雪天</button>
+      <button class="opt" data-amb="rain">雨天</button>
+      <button class="opt" data-amb="sakura">樱花</button>
+      <button class="opt" data-amb="maple">枫叶</button>
+      <button class="opt" data-amb="cyber">赛博</button>
+      <button class="opt" data-amb="wind">狂风</button>
+    </div>
+    <div class="sheet-label">氛围数量 <span id="ambDensityVal" class="sub">正常</span></div>
+    <input id="ambDensity" class="amb-range" type="range" min="0" max="3" step="1" value="1" aria-label="背景氛围粒子数量">
+  </div>
+
+  <div class="sheet-pane" data-pane="func">
+    <div class="sheet-label">延音踏板</div>
+    <div class="opt-row" id="pedalOpts">
+      <button class="opt" data-pedal="on">开</button>
+      <button class="opt" data-pedal="off">关</button>
+    </div>
+    <div class="sheet-label">强弱音符识别 <span class="sub">重音 / fff / ppp</span></div>
+    <div class="opt-row" id="dynOpts">
+      <button class="opt" data-dyn="on">开</button>
+      <button class="opt" data-dyn="off">关</button>
+    </div>
+    <div class="sheet-label">自由弹奏移动屏幕 <span class="sub">双指缩放 / 拖动平移</span></div>
+    <div class="opt-row" id="mvOpts">
+      <button class="opt" data-move="on">开</button>
+      <button class="opt" data-move="off">关</button>
+    </div>
+    <div class="sheet-label">自由弹奏画面缩放</div>
+    <div class="opt-row" id="zoomOpts">
+      <button class="opt" id="zoomReset">重置为 100%</button>
+    </div>
+    
+    
+    <div class="sheet-label">播放器侧栏</div>
+    <div class="opt-row" id="sidebarOpts">
+      <button class="opt" data-sidebar="on">显示</button>
+      <button class="opt" data-sidebar="off">隐藏</button>
+    </div>
+    <div class="sheet-label">上方工具栏</div>
+    <div class="opt-row" id="topbarOpts">
+      <button class="opt" data-topbar="on">显示</button>
+      <button class="opt" data-topbar="off">隐藏</button>
+    </div>
+    <div class="sheet-sep"></div>
+        <div class="sheet-label">乐谱</div>
+        <div class="opt-row">
+          <button class="opt" data-score="on">显示</button>
+          <button class="opt" data-score="off">隐藏</button>
+        </div>
+        <div class="sheet-label">乐谱泛光</div>
+        <div class="opt-row">
+          <button class="opt" data-sglow="on">开</button>
+          <button class="opt" data-sglow="off">关</button>
+        </div>
+        <div class="sheet-label">乐谱颜色</div>
+        <div class="opt-row scroll" id="scoreColorOpts">
+          <button class="opt" data-scolor="white"><i style="--c1:#fff;--c2:#cfe3ff"></i>白</button>
+          <button class="opt" data-scolor="gold"><i style="--c1:#ffe9a8;--c2:#ffb02e"></i>金</button>
+          <button class="opt" data-scolor="blue"><i style="--c1:#bfe4ff;--c2:#3f8cff"></i>蓝</button>
+          <button class="opt" data-scolor="teal"><i style="--c1:#bffcf4;--c2:#19d3c5"></i>青</button>
+          <button class="opt" data-scolor="purple"><i style="--c1:#e2ccff;--c2:#8b5cf6"></i>紫</button>
+          <button class="opt" data-scolor="pink"><i style="--c1:#ffd9ea;--c2:#ff5fa2"></i>粉</button>
+          <button class="opt" data-scolor="red"><i style="--c1:#ffc9c9;--c2:#ff5a6a"></i>红</button>
+          <button class="opt" data-scolor="green"><i style="--c1:#c9f8d8;--c2:#22c55e"></i>绿</button>
+          <button class="opt" data-scolor="orange"><i style="--c1:#ffe0bd;--c2:#ff8a1f"></i>橙</button>
+          <button class="opt" data-scolor="rose"><i style="--c1:#ffe3f2;--c2:#ff8fb8"></i>玫</button>
+        </div>
+        <div class="sheet-label">乐谱位置 <span class="sub" id="scorePosVal">12</span></div>
+        <input id="scorePos" class="amb-range" type="range" min="-40" max="80" step="2" value="12" aria-label="乐谱位置">
+        <div class="sheet-label">乐谱大小 <span class="sub" id="scoreSizeVal">100%</span></div>
+        <div class="opt-row">
+          <button class="opt" data-ssize="-">－ 缩小</button>
+          <button class="opt" data-ssize="+">＋ 放大</button>
+        </div>
+        <div class="sheet-label">乐谱泛光强度</div>
+        <input id="scoreGlowLevel" class="amb-range" type="range" min="0" max="3" step="1" value="1" aria-label="乐谱泛光强度">
+        <div class="sheet-label">乐谱背景透明度 <span id="scoreBgVal" class="sub">72%</span></div>
+        <input id="scoreBg" class="amb-range" type="range" min="0" max="100" step="1" value="72" aria-label="乐谱背景透明度">
+        <div class="sheet-label">背景图片模糊度 <span id="bgBlurVal" class="sub">0%</span></div>
+        <input id="bgBlur" class="amb-range" type="range" min="0" max="20" step="1" value="0" aria-label="背景图片模糊度">
+        <div class="sheet-label">开始界面</div>
+    <div class="opt-row" id="homeOpts">
+      <button class="opt" data-home="on">返回开始界面</button>
+    </div>
+  </div>
+
+  <div class="sheet-pane" data-pane="debug">
+    <div class="sheet-label">小节线</div>
+    <div class="opt-row" id="barOpts">
+      <button class="opt" data-bar="on">开</button>
+      <button class="opt" data-bar="off">关</button>
+    </div>
+    <div class="sheet-label">性能模式（自动降画质）</div>
+    <div class="opt-row" id="perfOpts">
+      <button class="opt" data-perf="on">开</button>
+      <button class="opt" data-perf="off">关</button>
+    </div>
+    <div class="sheet-label">全屏（刘海屏适配）</div>
+    <div class="opt-row" id="fullOpts">
+      <button class="opt" data-full="on">开</button>
+      <button class="opt" data-full="off">关</button>
+    </div>
+    <div class="sheet-label">显示 FPS</div>
+    <div class="opt-row" id="fpsOpts">
+      <button class="opt" data-fps="on">开</button>
+      <button class="opt" data-fps="off">关</button>
+    </div>
+    <div class="sheet-label">运行信息 <span class="sub">音符/粒子/缩放</span></div>
+    <div class="opt-row" id="statsOpts">
+      <button class="opt" data-stats="on">开</button>
+      <button class="opt" data-stats="off">关</button>
+    </div>
+    <div class="sheet-label">重置</div>
+    <div class="opt-row" id="resetOpts">
+      <button class="opt" id="resetAll">恢复所有默认设置</button>
+    </div>
+  </div>
+</section>
+
+<footer id="controls">
+  <div class="row main">
+    <button id="btnPlay" class="play" aria-label="播放">▶</button>
+    <div class="progress-wrap">
+      <input id="seek" type="range" min="0" max="1000" step="1" value="0" aria-label="进度">
+      <div class="time-row"><span id="timeNow">0:00</span><span id="timeTotal">0:00</span></div>
+    </div>
+  </div>
+  <div class="row small">
+    <label class="slider-label">速度
+      <input id="speed" type="range" min="0.5" max="2" step="0.05" value="1">
+      <span id="speedVal">1.0×</span>
+    </label>
+    <label class="slider-label">音量
+      <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8">
+    </label>
+  </div>
+</footer>
+<button id="sideTab" class="side-tab" aria-label="显示播放器">▤</button>
+
+<input id="midiFile" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
+<input id="bgFile" type="file" accept="image/*" hidden>
+        <input id="scoreFile" type="file" accept=".xml,.musicxml,.mxl,application/xml" hidden>
+
+<script src="demo.js?v=22"></script>
+<script src="midi.js?v=22"></script>
+<script src="piano.js?v=22"></script>
+<script src="musicxml.js?v=26"></script>
+  <script src="app.js?v=25?v=22"></script>
+</body>
+</html>

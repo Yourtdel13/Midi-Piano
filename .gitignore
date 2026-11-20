@@ -1,0 +1,26 @@
+# Build output
+build/
+*.apk
+*.aab
+*.ap_
+*.idsig
+
+# Signing material (never commit)
+debug.keystore
+release.keystore
+*.jks
+*.keystore
+
+# Local toolchain
+.deps/
+/tmp/
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
