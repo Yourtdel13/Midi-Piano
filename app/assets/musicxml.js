@@ -219,6 +219,14 @@
       }
       ottavas[oi2].staff = cnt[2] > cnt[1] ? 2 : 1;
     }
+    for (var no2 = 0; no2 < notes.length; no2++) {
+      var nn2 = notes[no2];
+      nn2.ottava = 0;
+      for (var oo2 = 0; oo2 < ottavas.length; oo2++) {
+        var ov2 = ottavas[oo2];
+        if ((!ov2.staff || nn2.staff === ov2.staff) && nn2.start >= ov2.start - 0.01 && nn2.start < ov2.end) nn2.ottava = ov2.dir === 'up' ? 12 : -12;
+      }
+    }
 
     notes.sort(function (a, b) { return a.start - b.start; });
     for (var k = 0; k < measures.length; k++) {
@@ -483,6 +491,7 @@
       var dx = xOf(dr.time);
       ctx.globalAlpha = 0.85; ctx.fillStyle = color;
       ctx.font = 'bold ' + (gap * 1.5) + 'px system-ui, sans-serif';
+      if (!dr.sym && /^Fine$/i.test(dr.text || '')) { ctx.font = 'italic ' + (gap * 1.5) + 'px serif'; ctx.fillText('Fine', dx + 2, top1 - gap * 0.6); continue; }
       if (dr.sym === 'segno') { drawSegno(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Segno', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
       else if (dr.sym === 'coda') { drawCoda(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Coda', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
       else ctx.fillText(dr.text, dx + 2, top1 - gap * 0.6);
@@ -493,11 +502,7 @@
     for (var k = 0; k < score.notes.length; k++) {
       var nn = score.notes[k];
       if (!inWin(nn.start)) continue;
-      var shift = 0;
-      for (var oi = 0; oi < score.ottavas.length; oi++) {
-        var otv = score.ottavas[oi];
-        if ((!otv.staff || nn.staff === otv.staff) && nn.start >= otv.start && nn.start < otv.end) shift = otv.dir === 'up' ? 14 : -14;
-      }
+      var shift = 0; // 8va/8vb 只影响发声，谱面保持原谱写法
       if (nn.rest) {
         restHeads.push({ n: nn, x: xOf(nn.start), top: (nn.staff === 2 ? top2 : top1) });
       } else {

@@ -1843,8 +1843,8 @@
         var tx = d.text;
         if (/D\.?\s*S\.?/i.test(tx) && !doneDS && !inCoda && segnoIdx >= 0) { doneDS = true; jump = segnoIdx; }
         else if (/D\.?\s*C\.?/i.test(tx) && !doneDC && !inCoda) { doneDC = true; jump = 0; }
-        else if (/To\s+Coda/i.test(tx) && !doneCoda && codaIdx >= 0) { doneCoda = true; inCoda = true; jump = codaIdx; }
-        else if (/Fine/i.test(tx) && (doneDC || doneDS || inCoda)) jump = n;
+        else if (/To\s+Coda/i.test(tx) && !doneCoda && codaIdx >= 0 && (doneDS || doneDC)) { doneCoda = true; inCoda = true; jump = codaIdx; }
+        else if (/Fine/i.test(tx) && (doneDC || doneDS)) jump = n;
       });
       if (jump >= 0) { i = jump; if (i >= n) break; continue; }
       if (!skip && back[i]) {
@@ -1868,7 +1868,7 @@
           for (var gi = 0; gi < nn.graces.length; gi++) {
             var gr = nn.graces[gi];
             var gs0 = Math.max(0, st0 - (nn.graces.length - gi) * 0.085);
-            notes.push({ midi: gr.midi, start: gs0, dur: 0.07, end: gs0 + 0.07,
+            notes.push({ midi: gr.midi + (nn.ottava || 0), start: gs0, dur: 0.07, end: gs0 + 0.07,
               velocity: Math.max(0.05, Math.min(1.2, 0.42 * dynAt(nn.start))), vol: 1, channel: 0, track: 0, grace: true });
           }
         }
@@ -1877,7 +1877,7 @@
         if (arts.staccato) dur0 *= 0.45;
         var dg = dynAt(nn.start);
         var vel0 = Math.max(0.05, Math.min(1.25, (arts.accent ? 0.98 : 0.72) * dg));
-        notes.push({ midi: nn.midi, start: st0, dur: dur0, end: st0 + dur0,
+        notes.push({ midi: nn.midi + (nn.ottava || 0), start: st0, dur: dur0, end: st0 + dur0,
           velocity: vel0, vol: 1, channel: 0, track: 0, tieStop: !!nn.tieStop, art: arts, hand: nn.staff === 2 ? 'L' : 'R' });
       });
       cur += len;
