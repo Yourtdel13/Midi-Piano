@@ -1,6 +1,6 @@
 # MIDI 钢琴（MIDI Piano）
 
-> **v3.20 正式版**：MIDI / MusicXML 播放、乐谱同步、自由弹奏与视觉特效均已可用。
+> **v3.21 正式版**：MIDI / MusicXML 播放、乐谱同步、自由弹奏与视觉特效均已可用。
 
 一个用 WebView + 纯前端实现的 Android 钢琴可视化播放器：
 导入 MIDI 或 MusicXML/MXL，音符从上方落下，敲到琴键时迸出粒子；
