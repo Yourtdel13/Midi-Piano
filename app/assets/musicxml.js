@@ -257,7 +257,7 @@
   var GLYPH_G = '\uD834\uDD1E';
   var GLYPH_F = '\uD834\uDD22';
 
-  function drawArts(ctx, x, y, up, gap, size, arts, color) {
+  function drawArts(ctx, x, y, up, gap, size, arts, color, cy0, cy1) {
     var side = up ? -1 : 1;
     var ay = y + side * gap * 2.5;
     ctx.save();
@@ -281,10 +281,13 @@
       ctx.stroke();
     }
     if (arts.arpeggio) {
+      var yTopA = (cy0 != null ? cy0 : y - gap * 1.6) - gap * 0.25;
+      var yBotA = (cy1 != null ? cy1 : y + gap * 0.4) + gap * 0.25;
+      var nz = Math.max(4, Math.round((yBotA - yTopA) / (gap * 0.34)));
       ctx.lineWidth = Math.max(1, 1.3 * size);
       ctx.beginPath();
-      for (var a = 0; a <= 10; a++) {
-        var ax2 = x - gap * 1.8 + (a % 2 ? gap * 0.25 : -gap * 0.25), ay2 = y - gap * 1.6 + a * gap * 0.32;
+      for (var a = 0; a <= nz; a++) {
+        var ax2 = x - gap * 1.8 + (a % 2 ? gap * 0.28 : -gap * 0.28), ay2 = yBotA + a * (yTopA - yBotA) / nz;
         if (a === 0) ctx.moveTo(ax2, ay2); else ctx.lineTo(ax2, ay2);
       }
       ctx.stroke();
@@ -542,6 +545,11 @@
       var ck = hc.n.start.toFixed(3) + '|' + hc.n.staff + '|' + hc.n.voice;
       (cMap[ck] || (cMap[ck] = [])).push(hc);
     }
+    for (var ck3 in cMap) {
+      var carr = cMap[ck3], cy0 = 1e9, cy1 = -1e9;
+      for (var ci3 = 0; ci3 < carr.length; ci3++) { if (carr[ci3].y < cy0) cy0 = carr[ci3].y; if (carr[ci3].y > cy1) cy1 = carr[ci3].y; }
+      for (var ci4 = 0; ci4 < carr.length; ci4++) { carr[ci4]._chordY0 = cy0; carr[ci4]._chordY1 = cy1; }
+    }
     for (var ck2 in cMap) {
       var arr = cMap[ck2], upDir = null, sumY = 0;
       for (var ai = 0; ai < arr.length; ai++) {
@@ -597,6 +605,9 @@
     for (var gg = 0; gg < groups.length; gg++) {
       if (groups[gg].notes.length < 2) { groups[gg].notes.forEach(function (x) { x.beamed = false; }); continue; }
       var gs = groups[gg].notes, gf = gs[0], gl = gs[gs.length - 1];
+      var uni = [], lastSt = -1;
+      for (var gu = 0; gu < gs.length; gu++) { var stv = Math.round(gs[gu].n.start * 1000); if (stv !== lastSt) { uni.push(gs[gu]); lastSt = stv; } }
+      if (uni.length >= 2) { gf = uni[0]; gl = uni[uni.length - 1]; }
       var yA = gf.stemY, yB = gl.stemY;
       var maxSlope = gap * 2.2;
       if (Math.abs(yB - yA) > maxSlope) { yB = yA + (yB > yA ? maxSlope : -maxSlope); }
@@ -615,7 +626,8 @@
         var gn = gh.n.graces[gi0];
         var gx = gh.x - gap * (1.5 + gi0 * 1.1), gy = gh.y - gap * 0.5;
         var gr = Math.max(1.8, 2.4 * size);
-        ctx.fillStyle = PLAYED; ctx.strokeStyle = PLAYED;
+        var gPlayed = gh.n.start <= t + 0.001;
+        ctx.fillStyle = gPlayed ? PLAYED : color; ctx.strokeStyle = gPlayed ? PLAYED : color;
         ctx.globalAlpha = 0.9; ctx.shadowBlur = 0;
         ctx.beginPath(); ctx.ellipse(gx, gy, gr, gr * 0.7, -0.3, 0, Math.PI * 2); ctx.fill();
         ctx.lineWidth = Math.max(1, 0.9 * size);
@@ -682,7 +694,7 @@
         ctx.fillText(String(n2.tuplet), h2.x + (h2.up ? -gap * 0.9 : gap * 0.9), h2.y + (h2.up ? -gap * 1.0 : gap * 2.4));
         ctx.restore();
       }
-      if (n2.arts && h2._artDraw) drawArts(ctx, h2.x, h2.y, h2.up, gap, size, n2.arts, headColor);
+      if (n2.arts && h2._artDraw) drawArts(ctx, h2.x, h2.y, h2.up, gap, size, n2.arts, headColor, h2._chordY0, h2._chordY1);
 
       // 上加/下加线
       var stTop = n2.staff === 2 ? top2 : top1, stBot = stTop + staffH;

@@ -2198,7 +2198,7 @@
       state.view.zoom = 1;
       state.view.pan = 0;
       setControlsHidden(true);
-      var fh = $('freeHint'); if (fh) { fh.classList.remove('hidden'); fh.textContent = '双指缩放 · 拖动上方平移 · 滑动琴键刮奏'; }
+      var fh = $('freeHint'); if (fh) { fh.classList.remove('hidden'); var ft = $('freeHintText'); if (ft) ft.textContent = '双指缩放 · 拖动上方平移 · 滑动琴键刮奏'; }
       $('songTitle').textContent = '自由弹奏';
       $('songMeta').textContent = '点击下方琴键发声';
     });
