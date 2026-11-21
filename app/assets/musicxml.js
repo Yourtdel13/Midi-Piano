@@ -463,27 +463,6 @@
       ctx.restore();
     }
 
-    // 8va / 8vb
-    for (var o = 0; o < score.ottavas.length; o++) {
-      var ot = score.ottavas[o];
-      if (!inWin(ot.start)) continue;
-      var ox1 = xOf(ot.start), ox2 = xOf(ot.end);
-      var oTop = (ot.staff === 2 ? top2 : top1);
-      var oAbove = ot.dir === 'up';
-      if (ot.y === 0 || ot.y) oAbove = ot.y >= 0;
-      var oy = oAbove ? oTop - gap * 1.6 : oTop + staffH + gap * 1.6;
-      ctx.globalAlpha = 0.65; ctx.lineWidth = 1.1;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(ox1, oy); ctx.lineTo(ox2, oy);
-      ctx.lineTo(ox1, oy);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.font = 'italic ' + (gap * 1.4) + 'px system-ui, sans-serif';
-      ctx.fillStyle = color; ctx.globalAlpha = 0.85;
-      ctx.fillText(oAbove ? '8va' : '8vb', ox1 + 2, oAbove ? oy - 3 : oy + gap * 1.5);
-    }
-
     // 文字指示（D.C. / D.S. / To Coda）
     for (var d = 0; d < score.directions.length; d++) {
       var dr = score.directions[d];
@@ -723,7 +702,7 @@
         ctx.fillText(String(n2.tuplet), h2.x + (h2.up ? -gap * 0.9 : gap * 0.9), h2.y + (h2.up ? -gap * 1.0 : gap * 2.4));
         ctx.restore();
       }
-      if (n2.arts && h2._artDraw) drawArts(ctx, h2.x, h2.y, h2.up, gap, size, n2.arts, headColor, h2._chordY0, h2._chordY1);
+      if (n2.arts && (n2.arts.arpeggio ? h2._artDraw : true)) drawArts(ctx, h2.x, h2.y, h2.up, gap, size, n2.arts, headColor, h2._chordY0, h2._chordY1);
 
       // 上加/下加线
       var stTop = n2.staff === 2 ? top2 : top1, stBot = stTop + staffH;
@@ -777,6 +756,27 @@
           ctx.beginPath(); ctx.moveTo(ga.stemX, oyA); ctx.lineTo(gbv.stemX, oyB); ctx.stroke();
         }
       }
+    }
+
+    // 8va / 8vb
+    for (var o = 0; o < score.ottavas.length; o++) {
+      var ot = score.ottavas[o];
+      if (!inWin(ot.start)) continue;
+      var ox1 = xOf(ot.start), ox2 = xOf(ot.end);
+      var oTop = (ot.staff === 2 ? top2 : top1);
+      var oAbove = ot.dir === 'up';
+      if (ot.y === 0 || ot.y) oAbove = ot.y >= 0;
+      var oy = oAbove ? oTop - gap * 1.6 : oTop + staffH + gap * 1.6;
+      ctx.globalAlpha = 0.65; ctx.lineWidth = 1.1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(ox1, oy); ctx.lineTo(ox2, oy);
+      ctx.lineTo(ox1, oy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = 'italic ' + (gap * 1.4) + 'px system-ui, sans-serif';
+      ctx.fillStyle = color; ctx.globalAlpha = 0.85;
+      ctx.fillText(oAbove ? '8va' : '8vb', ox1 + 2, oAbove ? oy - 3 : oy + gap * 1.5);
     }
 
     // 延音线 / 圆滑线
