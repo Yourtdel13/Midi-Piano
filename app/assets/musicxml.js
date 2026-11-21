@@ -79,6 +79,8 @@
               var lbl = dg0 >= 1.02 ? 'fff' : dg0 >= .93 ? 'ff' : dg0 >= .82 ? 'f' : dg0 >= .7 ? 'mf' : dg0 >= .58 ? 'mp' : dg0 >= .45 ? 'p' : dg0 >= .32 ? 'pp' : 'ppp';
               dynamics.push({ time: secAt(t), gain: dg0, label: lbl });
             }
+            if (snd.getAttribute('segno')) directions.push({ time: secAt(t), sym: 'segno' });
+            if (snd.getAttribute('coda')) directions.push({ time: secAt(t), sym: 'coda' });
             if (snd.getAttribute('dalsegno')) directions.push({ time: secAt(t), text: 'D.S.' });
             if (snd.getAttribute('dacapo')) directions.push({ time: secAt(t), text: 'D.C.' });
             if (snd.getAttribute('tocoda')) directions.push({ time: secAt(t), text: 'To Coda' });
@@ -94,7 +96,7 @@
           if (os) {
             var typ = os.getAttribute('type');
             var dirEl = el.parentNode && el.parentNode.parentNode ? el.parentNode.parentNode : el;
-            var osStaff = parseInt(txt(el, 'staff') || txt(dirEl, 'staff') || '1', 10) || 1;
+            var osStaff = parseInt(txt(el, 'staff') || txt(dirEl, 'staff') || '0', 10) || 0;
             if (typ === 'stop') {
               if (openOttava) { ottavas.push({ start: openOttava.time, end: secAt(t), dir: openOttava.dir, staff: openOttava.staff, size: 8 }); openOttava = null; }
             } else {
@@ -206,7 +208,17 @@
       measures.push({ start: secAt(mStart), end: secAt(t), index: mi });
       if (openEnding && mi === measuresEl.length - 1) { endings.push({ start: secAt(openEnding.start), end: secAt(t), label: openEnding.label }); openEnding = null; }
     }
-    if (openOttava) ottavas.push({ start: openOttava.time, end: secAt(t), dir: openOttava.dir, size: 8 });
+    if (openOttava) ottavas.push({ start: openOttava.time, end: secAt(t), dir: openOttava.dir, staff: openOttava.staff || 0, size: 8 });
+    for (var oi2 = 0; oi2 < ottavas.length; oi2++) {
+      if (ottavas[oi2].staff) continue;
+      var cnt = { 1: 0, 2: 0 };
+      for (var nj2 = 0; nj2 < notes.length; nj2++) {
+        var nt2 = notes[nj2];
+        if (nt2.rest || nt2.start < ottavas[oi2].start - 0.05 || nt2.start > ottavas[oi2].end) continue;
+        cnt[nt2.staff === 2 ? 2 : 1]++;
+      }
+      ottavas[oi2].staff = cnt[2] > cnt[1] ? 2 : 1;
+    }
 
     notes.sort(function (a, b) { return a.start - b.start; });
     for (var k = 0; k < measures.length; k++) {
@@ -471,8 +483,8 @@
       var dx = xOf(dr.time);
       ctx.globalAlpha = 0.85; ctx.fillStyle = color;
       ctx.font = 'bold ' + (gap * 1.5) + 'px system-ui, sans-serif';
-      if (dr.sym === 'segno') drawSegno(ctx, dx, top1 - gap * 0.9, gap * 1.2, color);
-      else if (dr.sym === 'coda') drawCoda(ctx, dx, top1 - gap * 0.9, gap * 1.2, color);
+      if (dr.sym === 'segno') { drawSegno(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Segno', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
+      else if (dr.sym === 'coda') { drawCoda(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Coda', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
       else ctx.fillText(dr.text, dx + 2, top1 - gap * 0.6);
     }
 
@@ -484,7 +496,7 @@
       var shift = 0;
       for (var oi = 0; oi < score.ottavas.length; oi++) {
         var otv = score.ottavas[oi];
-        if (nn.start >= otv.start && nn.start < otv.end) shift = otv.dir === 'up' ? 14 : -14;
+        if ((!otv.staff || nn.staff === otv.staff) && nn.start >= otv.start && nn.start < otv.end) shift = otv.dir === 'up' ? 14 : -14;
       }
       if (nn.rest) {
         restHeads.push({ n: nn, x: xOf(nn.start), top: (nn.staff === 2 ? top2 : top1) });

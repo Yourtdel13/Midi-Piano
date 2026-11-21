@@ -1814,7 +1814,7 @@
       return g;
     }
     var order = [], passes = {}, guard = 0;
-    var doneDC = false, doneDS = false, doneCoda = false;
+    var doneDC = false, doneDS = false, doneCoda = false, inCoda = false;
     var segnoIdx = -1, codaIdx = -1;
     function measureAt(tt) {
       for (var qm = 0; qm < ms.length; qm++) if (tt >= ms[qm].start - 0.02 && tt < ms[qm].end - 0.001) return qm;
@@ -1841,10 +1841,10 @@
       (sc.directions || []).forEach(function (d) {
         if (d.sym || d.time < m.start - 0.02 || d.time >= m.end - 0.001) return;
         var tx = d.text;
-        if (/D\.?\s*S\.?/i.test(tx) && !doneDS && segnoIdx >= 0) { doneDS = true; jump = segnoIdx; }
-        else if (/D\.?\s*C\.?/i.test(tx) && !doneDC) { doneDC = true; jump = 0; }
-        else if (/To\s+Coda/i.test(tx) && !doneCoda && codaIdx >= 0) { doneCoda = true; jump = codaIdx; }
-        else if (/Fine/i.test(tx) && doneDC) jump = n;
+        if (/D\.?\s*S\.?/i.test(tx) && !doneDS && !inCoda && segnoIdx >= 0) { doneDS = true; jump = segnoIdx; }
+        else if (/D\.?\s*C\.?/i.test(tx) && !doneDC && !inCoda) { doneDC = true; jump = 0; }
+        else if (/To\s+Coda/i.test(tx) && !doneCoda && codaIdx >= 0) { doneCoda = true; inCoda = true; jump = codaIdx; }
+        else if (/Fine/i.test(tx) && (doneDC || doneDS || inCoda)) jump = n;
       });
       if (jump >= 0) { i = jump; if (i >= n) break; continue; }
       if (!skip && back[i]) {
