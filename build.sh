@@ -7,6 +7,7 @@ APP=app
 BUILD=build
 SDK="${ANDROID_JAR:-.deps/android.jar}"
 R8JAR="${R8_JAR:-.deps/r8.jar}"
+KS_PASS="${KS_PASS:-android}"
 KEYSTORE="${KEYSTORE:-debug.keystore}"
 OUT="${OUT:-$BUILD/MidiPiano.apk}"
 
@@ -41,13 +42,13 @@ zipalign -f 4 "$BUILD/unsigned.apk" "$BUILD/aligned.apk"
 
 if [ ! -f "$KEYSTORE" ]; then
   echo "==> 生成调试签名"
-  keytool -genkeypair -keystore "$KEYSTORE" -storepass android -keypass android \
+  keytool -genkeypair -keystore "$KEYSTORE" -storepass "$KS_PASS" -keypass "$KS_PASS" \
     -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
     -dname "CN=Android Debug,O=Android,C=US" >/dev/null
 fi
 
 echo "==> apksigner"
-apksigner sign --ks "$KEYSTORE" --ks-pass pass:android --key-pass pass:android \
+apksigner sign --ks "$KEYSTORE" --ks-pass pass:$KS_PASS --key-pass pass:$KS_PASS \
   --out "$OUT" "$BUILD/aligned.apk"
 
 apksigner verify --verbose "$OUT" | head -8
