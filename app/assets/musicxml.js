@@ -97,7 +97,11 @@
             var osStaff = parseInt(txt(el, 'staff') || txt(dirEl, 'staff') || '1', 10) || 1;
             if (typ === 'stop') {
               if (openOttava) { ottavas.push({ start: openOttava.time, end: secAt(t), dir: openOttava.dir, staff: openOttava.staff, size: 8 }); openOttava = null; }
-            } else openOttava = { time: secAt(t), dir: typ === 'down' ? 'down' : 'up', staff: osStaff, y: parseFloat(os.getAttribute('default-y') || 'NaN') };
+            } else {
+              var osY = parseFloat(os.getAttribute('default-y') || 'NaN');
+              var osDir = isNaN(osY) ? (typ === 'down' ? 'down' : 'up') : (osY >= 0 ? 'up' : 'down');
+              openOttava = { time: secAt(t), dir: osDir, staff: osStaff, y: osY };
+            }
           }
         } else if (tag === 'sound') {
           if (el.getAttribute('tempo')) tempoMap.push({ d: t, bpm: num(el.getAttribute('tempo'), 120) });
@@ -467,9 +471,9 @@
       var dx = xOf(dr.time);
       ctx.globalAlpha = 0.85; ctx.fillStyle = color;
       ctx.font = 'bold ' + (gap * 1.5) + 'px system-ui, sans-serif';
-      if (dr.sym === 'segno') drawSegno(ctx, dx, top1 - gap * 2.2, gap * 1.2, color);
-      else if (dr.sym === 'coda') drawCoda(ctx, dx, top1 - gap * 2.2, gap * 1.2, color);
-      else ctx.fillText(dr.text, dx + 2, top1 - gap * 1.6);
+      if (dr.sym === 'segno') drawSegno(ctx, dx, top1 - gap * 0.9, gap * 1.2, color);
+      else if (dr.sym === 'coda') drawCoda(ctx, dx, top1 - gap * 0.9, gap * 1.2, color);
+      else ctx.fillText(dr.text, dx + 2, top1 - gap * 0.6);
     }
 
     // 音符 / 休止 / 倚音
@@ -608,6 +612,14 @@
       var uni = [], lastSt = -1;
       for (var gu = 0; gu < gs.length; gu++) { var stv = Math.round(gs[gu].n.start * 1000); if (stv !== lastSt) { uni.push(gs[gu]); lastSt = stv; } }
       if (uni.length >= 2) { gf = uni[0]; gl = uni[uni.length - 1]; }
+      var stTopG = (gs[0].n.staff === 2 ? top2 : top1);
+      var avgYg = 0; for (var aug = 0; aug < uni.length; aug++) avgYg += uni[aug].y; avgYg /= Math.max(1, uni.length);
+      if (gs[0].n.staff === 2 && avgYg < stTopG + staffH * 0.42) {
+        for (var fg2 = 0; fg2 < gs.length; fg2++) {
+          var hg2 = gs[fg2]; hg2.up = false;
+          hg2.stemY = (hg2._chordY1 != null ? hg2._chordY1 : hg2.y) + gap * 3.2;
+        }
+      }
       var yA = gf.stemY, yB = gl.stemY;
       var maxSlope = gap * 2.2;
       if (Math.abs(yB - yA) > maxSlope) { yB = yA + (yB > yA ? maxSlope : -maxSlope); }
@@ -739,12 +751,12 @@
         ctx.restore();
       }
       for (var lv = 2; lv <= 4; lv++) {
-        ctx.lineWidth = Math.max(1.5, 2.6 * size);
+        ctx.lineWidth = Math.max(1.8, 3.1 * size);
         for (var pi = 0; pi < g.notes.length - 1; pi++) {
           var ga = g.notes[pi], gbv = g.notes[pi + 1];
           if (ga.flags < lv || gbv.flags < lv) continue;
-          var oyA = beamY(ga.stemX) + (up2 ? 1 : -1) * (gap * 0.4 * (lv - 1));
-          var oyB = beamY(gbv.stemX) + (up2 ? 1 : -1) * (gap * 0.4 * (lv - 1));
+          var oyA = beamY(ga.stemX) + (up2 ? 1 : -1) * (gap * 0.55 * (lv - 1));
+          var oyB = beamY(gbv.stemX) + (up2 ? 1 : -1) * (gap * 0.55 * (lv - 1));
           ctx.beginPath(); ctx.moveTo(ga.stemX, oyA); ctx.lineTo(gbv.stemX, oyB); ctx.stroke();
         }
       }

@@ -1769,7 +1769,7 @@
         color: SCORE_COLORS[s.color] || '#ffffff',
         glow: !!s.glow, glowBlur: [4, 10, 16, 24][s.glowLevel] || 10,
         size: s.size, windowSec: 12, bgAlpha: s.bgAlpha == null ? 0.72 : s.bgAlpha
-      }, { time: t });
+      }, { time: scoreTimeAt(t) });
       scoreBufAt = now2; scoreBufKey = key2;
     }
     ctx.drawImage(scoreBuf, 0, 0, vw, vh);
@@ -1816,9 +1816,13 @@
     var order = [], passes = {}, guard = 0;
     var doneDC = false, doneDS = false, doneCoda = false;
     var segnoIdx = -1, codaIdx = -1;
+    function measureAt(tt) {
+      for (var qm = 0; qm < ms.length; qm++) if (tt >= ms[qm].start - 0.02 && tt < ms[qm].end - 0.001) return qm;
+      return -1;
+    }
     (sc.directions || []).forEach(function (d) {
-      if (d.sym === 'segno') segnoIdx = idxAtTime(d.time, false);
-      if (d.sym === 'coda') codaIdx = idxAtTime(d.time, false);
+      if (d.sym === 'segno') segnoIdx = measureAt(d.time);
+      if (d.sym === 'coda') codaIdx = measureAt(d.time);
     });
     var i = 0;
     while (i < n && guard++ < 20000) {
@@ -1835,7 +1839,7 @@
       if (!skip) order.push(i);
       var jump = -1;
       (sc.directions || []).forEach(function (d) {
-        if (Math.abs(d.time - m.start) > 0.05 || d.sym) return;
+        if (d.sym || d.time < m.start - 0.02 || d.time >= m.end - 0.001) return;
         var tx = d.text;
         if (/D\.?\s*S\.?/i.test(tx) && !doneDS && segnoIdx >= 0) { doneDS = true; jump = segnoIdx; }
         else if (/D\.?\s*C\.?/i.test(tx) && !doneDC) { doneDC = true; jump = 0; }
