@@ -224,7 +224,7 @@
       nn2.ottava = 0;
       for (var oo2 = 0; oo2 < ottavas.length; oo2++) {
         var ov2 = ottavas[oo2];
-        if ((!ov2.staff || nn2.staff === ov2.staff) && nn2.start >= ov2.start - 0.01 && nn2.start < ov2.end) nn2.ottava = ov2.dir === 'up' ? 12 : -12;
+        if (false) nn2.ottava = 0; // 音频保持 MXL 原样，不再额外移八度
       }
     }
 

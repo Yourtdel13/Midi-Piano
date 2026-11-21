@@ -1836,7 +1836,6 @@
           if (en.label !== '1' && pass === 0) skip = true;
         }
       }
-      if (!skip) order.push(i);
       var jump = -1;
       (sc.directions || []).forEach(function (d) {
         if (d.sym || d.time < m.start - 0.02 || d.time >= m.end - 0.001) return;
@@ -1847,6 +1846,7 @@
         else if (/Fine/i.test(tx) && (doneDC || doneDS)) jump = n;
       });
       if (jump >= 0) { i = jump; if (i >= n) break; continue; }
+      if (!skip) order.push(i);
       if (!skip && back[i]) {
         var f = fwdBefore(i), p = passes[f] || 0;
         if (p < 1) { passes[f] = p + 1; i = f; continue; }
