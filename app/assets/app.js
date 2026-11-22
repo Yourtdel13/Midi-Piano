@@ -2053,7 +2053,7 @@
           var kk = state.keyMap[nn.midi];
           if (!kk) continue;
           var kx = kk.x + kk.w * 0.5;
-          if (state.particles.length < 1200) state.particles.push({ kind: 'mist', x: kx + (Math.random() - 0.5) * 22, y: hitY - 4,
+          if (state.particles.length < 1200) state.particles.push({ kind: 'mist', x: kx + (Math.random() - 0.5) * 22, y: state.hitY - 4,
             vx: (Math.random() - 0.5) * 26, vy: -28 - Math.random() * 48, life: 0,
             max: state.look.mistLife, size: 7 + Math.random() * 13, color: mistC, grav: -4 });
         }
