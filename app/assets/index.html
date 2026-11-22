@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#05070f">
 <title>MIDI 钢琴</title>
-<link rel="stylesheet" href="style.css?v=24">
+<link rel="stylesheet" href="style.css?v=31">
 </head>
 <body>
 <canvas id="stage"></canvas>
@@ -54,7 +54,7 @@
         <span class="hb-txt"><b>退出</b><em>关闭应用</em></span>
       </button>
     </div>
-    <div class="home-foot">DSH · v3.22</div>
+    <div class="home-foot">DSH · v3.23</div>
   </div>
 </div>
 
@@ -124,12 +124,21 @@
     <div class="opt-row" id="gradOpts">
       <button class="opt" data-grad="random">随机</button>
       <button class="opt" data-grad="hands">左右手</button>
+      <button class="opt" data-grad="lime">青柠</button><button class="opt" data-grad="ice">冰蓝</button><button class="opt" data-grad="sunset">晚霞</button>
     </div>
     <div class="sheet-label">音符泛光 <span class="sub">让下落音符自带辉光</span></div>
     <div class="sheet-label">发光线条颜色</div>
     <div class="opt-row scroll" id="lineOpts"><button class="opt" data-line="none">关</button><button class="opt" data-line="white">白</button><button class="opt" data-line="gold">金</button><button class="opt" data-line="blue">蓝</button><button class="opt" data-line="teal">青</button><button class="opt" data-line="purple">紫</button><button class="opt" data-line="pink">粉</button><button class="opt" data-line="red">红</button><button class="opt" data-line="green">绿</button><button class="opt" data-line="orange">橙</button></div>
+    <div class="sheet-label">发光线条强度</div>
+    <div class="opt-row" id="lineLevelOpts"><button class="opt" data-linelevel="0">弱</button><button class="opt" data-linelevel="1">中</button><button class="opt" data-linelevel="2">强</button><button class="opt" data-linelevel="3">极强</button></div>
     <div class="sheet-label">雾气颜色</div>
     <div class="opt-row scroll" id="mistOpts"><button class="opt" data-mist="none">关</button><button class="opt" data-mist="white">白</button><button class="opt" data-mist="gold">金</button><button class="opt" data-mist="blue">蓝</button><button class="opt" data-mist="teal">青</button><button class="opt" data-mist="purple">紫</button><button class="opt" data-mist="pink">粉</button><button class="opt" data-mist="red">红</button><button class="opt" data-mist="green">绿</button><button class="opt" data-mist="orange">橙</button></div>
+    <div class="sheet-label">命中烟雾 <span class="sub">音符命中后向上冒雾，长音符持续</span></div>
+    <div class="opt-row" id="mistOnOpts"><button class="opt" data-miston="on">开</button><button class="opt" data-miston="off">关</button></div>
+    <div class="sheet-label">烟雾强度</div>
+    <div class="opt-row" id="mistLevelOpts"><button class="opt" data-mistlevel="0">弱</button><button class="opt" data-mistlevel="1">中</button><button class="opt" data-mistlevel="2">强</button><button class="opt" data-mistlevel="3">极强</button></div>
+    <div class="sheet-label">烟雾存留 <span id="mistLifeVal" class="sub">1.2s</span></div>
+    <input id="mistLife" class="amb-range" type="range" min="0.5" max="2" step="0.1" value="1.2" aria-label="烟雾粒子存在时间">
     <div class="sheet-label">左轨泛光颜色</div>
     <div class="opt-row scroll" id="glowLOpts"><button class="opt" data-glowl="none">关</button><button class="opt" data-glowl="white">白</button><button class="opt" data-glowl="gold">金</button><button class="opt" data-glowl="blue">蓝</button><button class="opt" data-glowl="teal">青</button><button class="opt" data-glowl="purple">紫</button><button class="opt" data-glowl="pink">粉</button><button class="opt" data-glowl="red">红</button><button class="opt" data-glowl="green">绿</button><button class="opt" data-glowl="orange">橙</button></div>
     <div class="sheet-label">右轨泛光颜色</div>
@@ -147,7 +156,7 @@
       <button class="opt swatch" data-lcolor="purple"><i style="--c1:#f4e8ff;--c2:#a45bff"></i>紫</button>
       <button class="opt swatch" data-lcolor="pink"><i style="--c1:#ffeafa;--c2:#ff5fb0"></i>粉</button>
       <button class="opt swatch" data-lcolor="white"><i style="--c1:#ffffff;--c2:#c9d4ea"></i>白</button>
-    </div>
+    <button class="opt swatch" data-lcolor="lime"><i style="--c1:#f0ffe0;--c2:#7ee787"></i>青柠</button><button class="opt swatch" data-lcolor="ice"><i style="--c1:#eafaff;--c2:#7fd8ff"></i>冰蓝</button><button class="opt swatch" data-lcolor="sunset"><i style="--c1:#fff0e6;--c2:#ff8a5c"></i>晚霞</button></div>
     <div class="sheet-label">右手轨道颜色</div>
     <div class="opt-row swatch-row" id="rcOpts">
       <button class="opt swatch" data-rcolor="red"><i style="--c1:#ffe9ee;--c2:#ff3d5a"></i>红</button>
@@ -159,7 +168,7 @@
       <button class="opt swatch" data-rcolor="purple"><i style="--c1:#f4e8ff;--c2:#a45bff"></i>紫</button>
       <button class="opt swatch" data-rcolor="pink"><i style="--c1:#ffeafa;--c2:#ff5fb0"></i>粉</button>
       <button class="opt swatch" data-rcolor="white"><i style="--c1:#ffffff;--c2:#c9d4ea"></i>白</button>
-    </div>
+    <button class="opt swatch" data-rcolor="lime"><i style="--c1:#f0ffe0;--c2:#7ee787"></i>青柠</button><button class="opt swatch" data-rcolor="ice"><i style="--c1:#eafaff;--c2:#7fd8ff"></i>冰蓝</button><button class="opt swatch" data-rcolor="sunset"><i style="--c1:#fff0e6;--c2:#ff8a5c"></i>晚霞</button></div>
     <div class="sheet-label">背景氛围</div>
     <div class="opt-row scroll" id="ambOpts">
       <button class="opt" data-amb="none">关</button>
@@ -313,6 +322,6 @@
 <script src="piano.js?v=22"></script>
 <script src="musicxml.js?v=26"></script>
   <script src="demo-mxl.js?v=27"></script>
-  <script src="app.js?v=25?v=22"></script>
+  <script src="app.js?v=31?v=22"></script>
 </body>
 </html>

@@ -21,7 +21,7 @@
     look: { bgBlur: 0, perfAuto: false, shape: 'capsule', fx: 'splash', gradient: 'random', pedal: true, topbar: true,
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
       leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true,
-      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, lineColor: 'none', mistColor: 'none', kbLen: 20,
+      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20,
       score: { on: true, glow: true, color: 'white', pos: 12, size: 1, glowLevel: 1, bgAlpha: 0.72 } },
     freePlay: false, freeBars: [], freePressed: {}, home: true,
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
@@ -715,6 +715,16 @@
       p = state.particles[i];
       var a = 1 - p.life / p.max;
       var r = p.size * (0.4 + 0.6 * a);
+      if (p.kind === 'mist') {
+        var mp = p.life / p.max;
+        var mrad = p.size * (1 + 1.8 * mp);
+        var mg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, mrad);
+        mg.addColorStop(0, 'rgba(' + p.color + ',' + (0.22 * (1 - mp)).toFixed(3) + ')');
+        mg.addColorStop(1, 'rgba(' + p.color + ',0)');
+        ctx.fillStyle = mg;
+        ctx.beginPath(); ctx.arc(p.x, p.y, mrad, 0, Math.PI * 2); ctx.fill();
+        continue;
+      }
       if (p.kind === 'drop') {
         ctx.globalAlpha = a * 0.8;
         ctx.fillStyle = p.color;
@@ -824,7 +834,10 @@
     magenta:{ light: '#ffe6ff', base: '#ff4dff', deep: '#8f008f' },
     white:  { light: '#ffffff', base: '#e8eefc', deep: '#8f9bb8' },
     maple:  { light: '#ffe9c9', base: '#ff7a1a', deep: '#7a1e00' },
-    cyber:  { light: '#d9fbff', base: '#00e5ff', deep: '#5b00b8' }
+    cyber:  { light: '#d9fbff', base: '#00e5ff', deep: '#5b00b8' },
+    lime:   { light: '#f0ffe0', base: '#7ee787', deep: '#1f5c2e' },
+    ice:    { light: '#eafaff', base: '#7fd8ff', deep: '#2f6fae' },
+    sunset: { light: '#fff0e6', base: '#ff8a5c', deep: '#a63a2f' }
   };
 
   var GLOWS = {
@@ -931,6 +944,10 @@
       if (o && typeof o.glowR === 'string' && (o.glowR === 'none' || GLOWS[o.glowR])) state.look.glowR = o.glowR;
       if (o && typeof o.glowLevel === 'number') state.look.glowLevel = Math.max(0, Math.min(3, Math.round(o.glowLevel)));
       if (o && typeof o.lineColor === 'string' && (o.lineColor === 'none' || GLOWS[o.lineColor])) state.look.lineColor = o.lineColor;
+      if (typeof o.linePower === 'number') state.look.linePower = Math.max(0, Math.min(3, Math.round(o.linePower)));
+      if (typeof o.mistOn === 'boolean') state.look.mistOn = o.mistOn;
+      if (typeof o.mistPower === 'number') state.look.mistPower = Math.max(0, Math.min(3, Math.round(o.mistPower)));
+      if (typeof o.mistLife === 'number') state.look.mistLife = Math.max(0.5, Math.min(2, o.mistLife));
       if (o && typeof o.mistColor === 'string' && (o.mistColor === 'none' || GLOWS[o.mistColor])) state.look.mistColor = o.mistColor;
       if (o && typeof o.kbLen === 'number') state.look.kbLen = Math.max(0, Math.min(100, Math.round(o.kbLen)));
       if (o && typeof o.bgBlur === 'number') state.look.bgBlur = Math.max(0, Math.min(20, Math.round(o.bgBlur)));
@@ -1008,6 +1025,10 @@
     if (gvv) gvv.textContent = ['Low', 'Medium', 'High', 'Max'][Math.max(0, Math.min(3, state.look.glowLevel | 0))];
     var lns = document.querySelectorAll('#lineOpts .opt');
     for (var ln = 0; ln < lns.length; ln++) lns[ln].classList.toggle('active', lns[ln].getAttribute('data-line') === state.look.lineColor);
+    var lls = document.querySelectorAll('#lineLevelOpts [data-linelevel]'); for (var li = 0; li < lls.length; li++) lls[li].classList.toggle('active', +lls[li].getAttribute('data-linelevel') === state.look.linePower);
+    var mos = document.querySelectorAll('#mistOnOpts [data-miston]'); for (var mi = 0; mi < mos.length; mi++) mos[mi].classList.toggle('active', (mos[mi].getAttribute('data-miston') === 'on') === !!state.look.mistOn);
+    var mls = document.querySelectorAll('#mistLevelOpts [data-mistlevel]'); for (var mj = 0; mj < mls.length; mj++) mls[mj].classList.toggle('active', +mls[mj].getAttribute('data-mistlevel') === state.look.mistPower);
+    var mlf = $('mistLife'); if (mlf) mlf.value = String(state.look.mistLife); var mlv = $('mistLifeVal'); if (mlv) mlv.textContent = state.look.mistLife.toFixed(1) + 's';
     var mss = document.querySelectorAll('#mistOpts .opt');
     for (var ms = 0; ms < mss.length; ms++) mss[ms].classList.toggle('active', mss[ms].getAttribute('data-mist') === state.look.mistColor);
     var kl = $('kbLen');
@@ -1722,6 +1743,12 @@
     }
     if (line && line !== 'none' && GLOWS[line]) {
       var c = GLOWS[line];
+      var pw = state.look.linePower || 0, eh = 26 + pw * 26;
+      var eg = ctx.createLinearGradient(0, hitY - eh, 0, hitY + 2);
+      eg.addColorStop(0, 'rgba(0,0,0,0)');
+      eg.addColorStop(0.55, hexToRgba(c, 0.10 + pw * 0.06));
+      eg.addColorStop(1, hexToRgba(c, 0.22 + pw * 0.10));
+      ctx.fillStyle = eg; ctx.fillRect(0, hitY - eh, w, eh + 2);
       ctx.save();
       ctx.shadowColor = c;
       ctx.shadowBlur = 18;
@@ -2013,6 +2040,25 @@
       }
       state.prevT = t;
       emitNoteTrails(t, dt);
+    if (state.look.mistOn && state.look.mistColor !== 'none' && GLOWS[state.look.mistColor]) {
+      var mistC = GLOWS[state.look.mistColor];
+      state.mistAcc = (state.mistAcc || 0) + dt * (6 + state.look.mistPower * 10);
+      var mstart = lowerBound(state.notes, t - 0.25), mend = lowerBound(state.notes, t + 0.05);
+      for (var mn = mstart; mn < mend; mn++) {
+        var nn = state.notes[mn];
+        var nend = (state.look.pedal && nn.soundEnd) ? nn.soundEnd : nn.end;
+        if (t < nn.start || t > nend + 0.05) continue;
+        while (state.mistAcc >= 1) {
+          state.mistAcc -= 1;
+          var kk = state.keyMap[nn.midi];
+          if (!kk) continue;
+          var kx = kk.x + kk.w * 0.5;
+          if (state.particles.length < 1200) state.particles.push({ kind: 'mist', x: kx + (Math.random() - 0.5) * 22, y: hitY - 4,
+            vx: (Math.random() - 0.5) * 26, vy: -28 - Math.random() * 48, life: 0,
+            max: state.look.mistLife, size: 7 + Math.random() * 13, color: mistC, grav: -4 });
+        }
+      }
+    }
       if (t >= state.duration + 0.45) {
         state.playing = false;
         state.position = state.duration;
@@ -2237,6 +2283,9 @@
         if (b.hasAttribute('data-glowr')) state.look.glowR = b.getAttribute('data-glowr');
         if (b.hasAttribute('data-line')) state.look.lineColor = b.getAttribute('data-line');
         if (b.hasAttribute('data-mist')) state.look.mistColor = b.getAttribute('data-mist');
+        if (b.hasAttribute('data-linelevel')) state.look.linePower = Math.max(0, Math.min(3, +b.getAttribute('data-linelevel') || 0));
+        if (b.hasAttribute('data-miston')) state.look.mistOn = b.getAttribute('data-miston') === 'on';
+        if (b.hasAttribute('data-mistlevel')) state.look.mistPower = Math.max(0, Math.min(3, +b.getAttribute('data-mistlevel') || 0));
         if (b.hasAttribute('data-fps')) state.look.fps = b.getAttribute('data-fps') === 'on';
         if (b.hasAttribute('data-stats')) state.look.stats = b.getAttribute('data-stats') === 'on';
         if (b.hasAttribute('data-home')) {
@@ -2269,6 +2318,12 @@
         saveLook();
       });
     }
+    var mlf = $('mistLife');
+    if (mlf) mlf.addEventListener('input', function () {
+      state.look.mistLife = Math.max(0.5, Math.min(2, parseFloat(mlf.value) || 1.2));
+      var mlb = $('mistLifeVal'); if (mlb) mlb.textContent = state.look.mistLife.toFixed(1) + 's';
+      saveLook();
+    });
     var glvEl = $('glowLevel');
     if (glvEl) {
       glvEl.addEventListener('input', function () {
