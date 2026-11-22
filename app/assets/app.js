@@ -837,7 +837,9 @@
     cyber:  { light: '#d9fbff', base: '#00e5ff', deep: '#5b00b8' },
     lime:   { light: '#f0ffe0', base: '#7ee787', deep: '#1f5c2e' },
     ice:    { light: '#eafaff', base: '#7fd8ff', deep: '#2f6fae' },
-    sunset: { light: '#fff0e6', base: '#ff8a5c', deep: '#a63a2f' }
+    sunset: { light: '#fff0e6', base: '#ff8a5c', deep: '#a63a2f' },
+    pear:   { light: '#f2f8d8', base: '#9BB344', deep: '#43521a' },
+    azure:  { light: '#e2f8fb', base: '#41B5C2', deep: '#124a52' }
   };
 
   var GLOWS = {
@@ -860,10 +862,15 @@
     if (!n._rt) n._rt = GRADIENTS[GRAD_KEYS[(Math.random() * GRAD_KEYS.length) | 0]];
     return n._rt;
   }
+  var THEME_PAIR = { lime: 'pear', ice: 'azure', sunset: 'pink', pear: 'lime', azure: 'ice' };
+  function themeOf(n) {
+    var grad = state.look.gradient;
+    if (THEME_PAIR[grad] && handOf(n) === 'L') return GRADIENTS[THEME_PAIR[grad]];
+    return GRADIENTS[grad] || randomTheme(n);
+  }
   function noteColor(n) {
     if (state.look.gradient === 'hands') return handTheme(handOf(n)).base;
-    var th = GRADIENTS[state.look.gradient] || randomTheme(n);
-    return th.base;
+    return themeOf(n).base;
   }
 
   function mixHex(hex, other, amount) {
@@ -880,14 +887,14 @@
     var g = ctx.createLinearGradient(0, top, 0, Math.max(bottom, top + 1));
     if (state.look.gradient === 'hands') {
       var hh = handTheme(handOf(n));
-      g.addColorStop(0, hh.light);
+      g.addColorStop(0, mixHex(hh.light, hh.base, 0.30));
       g.addColorStop(0.5, hh.base);
       g.addColorStop(1, hh.deep);
       return g;
     }
-    var th = GRADIENTS[state.look.gradient] || randomTheme(n);
+    var th = themeOf(n);
     if (th) {
-      g.addColorStop(0, th.light);
+      g.addColorStop(0, mixHex(th.light, th.base, 0.32));
       g.addColorStop(0.5, th.base);
       g.addColorStop(1, th.deep);
       return g;
@@ -1492,9 +1499,13 @@
       if (glowOn) {
         ctx.shadowColor = GLOWS[gcol] || '#ffffff';
         ctx.shadowBlur = state.lowQ ? 0 : [6, 10, 14, 20][Math.max(0, Math.min(3, state.look.glowLevel | 0))];
+      } else if (!state.lowQ) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
       }
       ctx.fill();
-      if (glowOn) { ctx.shadowBlur = 0; ctx.shadowColor = 'rgba(0,0,0,0)'; }
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'rgba(0,0,0,0)';
 
       // 顶部高光 + 底部亮边，让渐变有层次
       if (hgt > 12) {
