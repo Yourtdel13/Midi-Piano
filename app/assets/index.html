@@ -41,7 +41,11 @@
         <span class="hb-ico">🎹</span>
         <span class="hb-txt"><b>自由弹奏</b><em>点琴键发声，音符向上飞</em></span>
       </button>
-      <button id="homeSettings" class="home-btn">
+      <button id="homeTutorial" class="home-btn">
+      <span class="hb-ico">?</span>
+      <span class="hb-txt"><strong>使用教学</strong><small>3 分钟了解全部功能</small></span>
+    </button>
+    <button id="homeSettings" class="home-btn">
         <span class="hb-ico">⚙</span>
         <span class="hb-txt"><b>设置</b><em>形状 · 特效 · 功能 · 调试</em></span>
       </button>
@@ -50,10 +54,22 @@
         <span class="hb-txt"><b>退出</b><em>关闭应用</em></span>
       </button>
     </div>
-    <div class="home-foot">DSH · v3.20</div>
+    <div class="home-foot">DSH · v3.21</div>
   </div>
 </div>
 
+<div id="tutorial" class="tut hidden">
+  <div class="tut-card">
+    <div class="tut-head"><span id="tutStep">1 / 7</span><button id="tutClose" aria-label="关闭教学">✕</button></div>
+    <h2 id="tutTitle">欢迎</h2>
+    <div id="tutBody" class="tut-body"></div>
+    <div id="tutActions" class="tut-actions"></div>
+    <div class="tut-nav">
+      <button id="tutPrev" class="opt">上一步</button>
+      <button id="tutNext" class="opt active">下一步</button>
+    </div>
+  </div>
+</div>
 <div id="freeHint" class="free-hint hidden"><span id="freeHintText">自由弹奏中 · 点击琴键发声</span><button id="freeHintClose" class="fh-x" aria-label="关闭提示">✕</button></div>
 
 <div id="hud">
@@ -296,6 +312,7 @@
 <script src="midi.js?v=22"></script>
 <script src="piano.js?v=22"></script>
 <script src="musicxml.js?v=26"></script>
+  <script src="demo-mxl.js?v=27"></script>
   <script src="app.js?v=25?v=22"></script>
 </body>
 </html>

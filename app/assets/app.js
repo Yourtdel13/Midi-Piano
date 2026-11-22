@@ -2348,13 +2348,24 @@
     });
 
     canvas.addEventListener('pointerdown', function (e) {
+      var g = state.gesture;
+      g.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var pid = Object.keys(g.pointers);
+      if (pid.length === 2) {
+        e.preventDefault();
+        var pa = g.pointers[pid[0]], pb = g.pointers[pid[1]];
+        g.mode = 'pinchV';
+        g.startDy = Math.abs(pa.y - pb.y) || 1;
+        g.startDx = Math.abs(pa.x - pb.x) || 1;
+        g.startVzoom = state.view.vzoom || 1;
+        g.startZoom = state.view.zoom;
+        return;
+      }
       if (!state.freePlay) {
         if (state.playing) bumpControls();
         return;
       }
       e.preventDefault();
-      var g = state.gesture;
-      g.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
       try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
       var ids = Object.keys(g.pointers);
       if (ids.length === 2 && state.look.freeMove) {
@@ -2378,9 +2389,23 @@
     });
     canvas.addEventListener('pointermove', function (e) {
       var g = state.gesture;
-      if (!state.freePlay || !g.pointers[e.pointerId]) return;
-      if (e.cancelable) e.preventDefault();
+      if (!g.pointers[e.pointerId]) return;
       g.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (g.mode === 'pinchV') {
+        var pids = Object.keys(g.pointers);
+        if (pids.length < 2) return;
+        var qa = g.pointers[pids[0]], qb = g.pointers[pids[1]];
+        var ddx2 = Math.abs(qa.x - qb.x) || 1, ddy2 = Math.abs(qa.y - qb.y) || 1;
+        state.view.vzoom = Math.max(0.45, Math.min(2.6, g.startVzoom * ddy2 / g.startDy));
+        if (state.freePlay && state.look.freeMove) {
+          var rzz = ddx2 / g.startDx;
+          if (Math.abs(rzz - 1) > 0.02) state.view.zoom = Math.max(1, Math.min(3, g.startZoom * rzz));
+        }
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+      if (!state.freePlay) return;
+      if (e.cancelable) e.preventDefault();
       if (g.mode === 'pinch') {
         var ids = Object.keys(g.pointers);
         if (ids.length < 2) return;
@@ -2490,6 +2515,56 @@
     if (gl) gl.addEventListener('input', function () { state.look.score.glowLevel = parseInt(gl.value, 10) || 0; saveLook(); });
   }
 
+
+  // ---------------- 使用教学 ----------------
+  var tutIdx = 0;
+  var TUT = [
+    { t: '欢迎来到 MIDI 钢琴', b: '这里可以把 MIDI 或 MuseScore 的 MXL 乐谱变成会发光的瀑布流钢琴。<br><br>首页有四个入口：<b>开始播放</b>、<b>自由弹奏</b>、<b>设置</b>、<b>退出</b>。' },
+    { t: '开始播放 / 自由弹奏', b: '开始播放会载入内置示例曲，跟着音符走。<br>自由弹奏是点琴键发声、音符条向上飞。<br><br>播放和自由弹奏都支持<b>双指上下拉</b>来加长/缩短音符条，自由弹奏里左右拉还能缩放键盘。' },
+    { t: '特效类', b: '设置 → 特效类：<ul><li>命中特效：水花 / 火花 / 火焰 / 樱花 / 枫叶 / 赛博 / 星尘</li><li>音符泛光：9 种颜色 + 强度</li><li>左右手轨道颜色、随机或渐变配色</li><li>背景氛围与粒子数量</li><li>乐谱颜色、泛光、位置、大小、背景透明度</li></ul>' },
+    { t: '功能类', b: '功能类里有：<ul><li>延音踏板开关</li><li>强弱音符识别（让 ppp/f 真正影响音量）</li><li>播放器侧栏、上方工具栏显隐</li><li>返回开始界面</li></ul>' },
+    { t: '调试类', b: '调试类一般不用动：<ul><li>小节线</li><li>全屏（适配横屏刘海）</li><li>性能模式：卡顿时自动降低画质，平时关掉保持满画质</li><li>FPS / 运行信息</li></ul>' },
+    { t: '导入一份 MXL 试试', b: '点「乐谱」按钮选一个 .mxl / .musicxml / .xml 文件，谱面会出现在瀑布流上方。<br><br>没有文件也没关系，可以直接用内置的《夜的钢琴曲五》。', actions: 'score' },
+    { t: '乐谱功能', b: '谱面会跟随播放，支持反复、D.C./D.S./Segno/Coda/Fine、8va/8vb、延音线、倚音、连音、力度与渐强渐弱。<br><br>谱面的颜色、泛光、位置、大小、透明度都在「特效类」里调。' }
+  ];
+  function renderTut() {
+    var st = TUT[tutIdx];
+    var step = $('tutStep'); if (step) step.textContent = (tutIdx + 1) + ' / ' + TUT.length;
+    var ti = $('tutTitle'); if (ti) ti.textContent = st.t;
+    var bd = $('tutBody'); if (bd) bd.innerHTML = st.b;
+    var ac = $('tutActions'); if (ac) {
+      ac.innerHTML = '';
+      if (st.actions === 'score') {
+        var b1 = document.createElement('button'); b1.className = 'opt'; b1.textContent = '导入 MXL 文件';
+        b1.onclick = function () { document.body.classList.remove('tut-on'); $('tutorial').classList.add('hidden'); var bi = $('btnScore'); if (bi) bi.click(); };
+        var b2 = document.createElement('button'); b2.className = 'opt'; b2.textContent = '用内置示例';
+        b2.onclick = loadBuiltinScore;
+        ac.appendChild(b1); ac.appendChild(b2);
+      }
+    }
+    var pv = $('tutPrev'); if (pv) { pv.disabled = tutIdx === 0; pv.classList.toggle('disabled', tutIdx === 0); }
+    var nx = $('tutNext'); if (nx) nx.textContent = tutIdx === TUT.length - 1 ? '完成' : '下一步';
+  }
+  function showTutorial() { tutIdx = 0; renderTut(); document.body.classList.add('tut-on'); var t = $('tutorial'); if (t) t.classList.remove('hidden'); }
+  function closeTutorial() { document.body.classList.remove('tut-on'); var t = $('tutorial'); if (t) t.classList.add('hidden'); }
+  async function loadBuiltinScore() {
+    try {
+      if (!window.DEMO_MXL_XML) throw new Error('内置乐谱未加载');
+      var f = new File([window.DEMO_MXL_XML], '夜的钢琴曲五.musicxml', { type: 'text/xml' });
+      await loadScoreFile(f);
+      closeTutorial();
+      tutIdx = TUT.length - 1; renderTut();
+      var t = $('tutorial'); if (t) t.classList.remove('hidden');
+      toast('已载入内置乐谱《夜的钢琴曲五》');
+    } catch (err) { toast('内置乐谱载入失败：' + (err && err.message ? err.message : err)); }
+  }
+  function bindTutorial() {
+    var ht = $('homeTutorial'); if (ht) ht.addEventListener('click', showTutorial);
+    var tc = $('tutClose'); if (tc) tc.addEventListener('click', closeTutorial);
+    var tp = $('tutPrev'); if (tp) tp.addEventListener('click', function () { if (tutIdx > 0) { tutIdx--; renderTut(); } });
+    var tn = $('tutNext'); if (tn) tn.addEventListener('click', function () { if (tutIdx < TUT.length - 1) { tutIdx++; renderTut(); } else closeTutorial(); });
+  }
+
   function start() {
     resize();
     initStars();
@@ -2497,6 +2572,7 @@
     loadLook();
     bindUI();
     bindScoreUI();
+    bindTutorial();
     applyLookUI();
     try { if (ensureAudio()) { /* 预解码钢琴采样 */ } } catch (e) { /* 无音频环境 */ }
     updateTransport(0);
