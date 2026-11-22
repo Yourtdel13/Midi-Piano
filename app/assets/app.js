@@ -719,8 +719,8 @@
         var mp = p.life / p.max;
         var mrad = p.size * (1 + 1.8 * mp);
         var mg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, mrad);
-        mg.addColorStop(0, 'rgba(' + p.color + ',' + (0.22 * (1 - mp)).toFixed(3) + ')');
-        mg.addColorStop(1, 'rgba(' + p.color + ',0)');
+        mg.addColorStop(0, hexToRgba(p.color, 0.22 * (1 - mp)));
+        mg.addColorStop(1, hexToRgba(p.color, 0));
         ctx.fillStyle = mg;
         ctx.beginPath(); ctx.arc(p.x, p.y, mrad, 0, Math.PI * 2); ctx.fill();
         continue;
