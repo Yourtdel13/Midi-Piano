@@ -48,6 +48,7 @@
           if (dEl) divisions = Math.max(1, parseInt(dEl.textContent, 10) || 1);
           var kEl = el.getElementsByTagName('key')[0];
           if (kEl) { keyFifths = parseInt(txt(kEl, 'fifths') || '0', 10) || 0; keyMode = txt(kEl, 'mode') || 'major'; }
+            if (kEl) { var qf = keyFifths, qm = keyMode, qlast = keys[keys.length-1]; if (!qlast || qlast.fifths !== qf || qlast.mode !== qm) keys.push({ time: secAt(mStart), fifths: qf, mode: qm }); }
           var tEl = el.getElementsByTagName('time')[0];
           if (tEl) { beats = parseInt(txt(tEl, 'beats') || '4', 10) || 4; beatType = parseInt(txt(tEl, 'beat-type') || '4', 10) || 4; }
           var clEls = el.getElementsByTagName('clef');
@@ -238,7 +239,7 @@
     title = (work && work.textContent.trim()) || (move && move.textContent.trim()) || '';
     return {
       notes: notes, measures: measures, repeats: repeats, endings: endings, directions: directions, ottavas: ottavas, wedges: wedges, dynamics: dynamics,
-      title: title, beats: beats, beatType: beatType, keyFifths: keyFifths, keyMode: keyMode, clefs: clefs,
+      title: title, beats: beats, beatType: beatType, keyFifths: keyFifths, keyMode: keyMode, clefs: clefs, keys: keys,
       duration: measures.length ? measures[measures.length - 1].end : 0
     };
   }

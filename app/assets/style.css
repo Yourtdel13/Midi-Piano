@@ -574,3 +574,33 @@ body.tut-on #stage { visibility: hidden; }
   .home-btn { padding: 9px 14px; border-radius: 15px; }
   .home-foot { margin-top: 10px; }
 }
+
+/* 顶栏收起 */
+#topbar { transition: opacity .22s ease, transform .22s ease; }
+#topbar.top-hidden { opacity: 0; transform: translateY(-12px); pointer-events: none; }
+.top-open { position: fixed; left: 10px; top: calc(10px + env(safe-area-inset-top)); z-index: 35; display: none; }
+.top-open.show { display: inline-flex; }
+/* 首页左侧文件入口 */
+.home-side { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 3; }
+.side-btn { width: 58px; padding: 10px 6px; border-radius: 16px; border: 1px solid rgba(140,180,255,.18);
+  background: rgba(16,22,40,.72); color: #cfe0ff; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; }
+.side-btn b { font-size: 17px; }
+.side-btn:active { transform: scale(.96); }
+/* 文件库 */
+.lib { position: fixed; inset: 0; z-index: 46; display: flex; align-items: center; justify-content: center; padding: 18px; background: #05070f; }
+.lib.hidden { display: none; }
+.lib-card { width: min(460px, 94vw); max-height: 78vh; display: flex; flex-direction: column; background: linear-gradient(165deg, rgba(24,31,52,.99), rgba(10,14,26,.99));
+  border: 1px solid rgba(140,180,255,.18); border-radius: 20px; padding: 16px; box-shadow: 0 24px 70px rgba(0,0,0,.6); }
+.lib-head { display: flex; justify-content: space-between; align-items: center; }
+.lib-head h2 { margin: 0; font-size: 19px; }
+.lib-head button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--stroke); background: transparent; color: var(--muted); }
+.lib-sub { margin: 8px 0 10px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+.lib-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+.lib-item { text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(140,180,255,.14); background: rgba(20,27,46,.8); color: var(--text); }
+.lib-item small { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+.lib-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 18px 0; }
+.lib-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* 首页左侧文件入口留白 */
+.home { padding-left: 84px; padding-right: 14px; }
+@media (orientation: landscape) and (max-height: 620px) { .home { padding-left: 84px; } }

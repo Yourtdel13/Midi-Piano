@@ -20,10 +20,10 @@
     pedals: [], keyLabel: '', pedalOn: false,
     look: { bgBlur: 0, perfAuto: false, shape: 'capsule', fx: 'splash', gradient: 'random', pedal: true, topbar: true,
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
-      leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true,
+      leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true, collapsed: false,
       glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20,
       score: { on: true, glow: true, color: 'white', pos: 12, size: 1, glowLevel: 1, bgAlpha: 0.72 } },
-    freePlay: false, freeBars: [], freePressed: {}, home: true,
+    freePlay: false, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
     fps: 0, fpsAcc: 0, fpsFrames: 0, dbgAcc: 0,
     prevT: 0, spawnCursor: 0, schedIndex: 0,
@@ -955,6 +955,7 @@
       if (typeof o.mistOn === 'boolean') state.look.mistOn = o.mistOn;
       if (typeof o.mistPower === 'number') state.look.mistPower = Math.max(0, Math.min(3, Math.round(o.mistPower)));
       if (typeof o.mistLife === 'number') state.look.mistLife = Math.max(0.5, Math.min(2, o.mistLife));
+      if (typeof o.collapsed === 'boolean') state.look.collapsed = o.collapsed;
       if (o && typeof o.mistColor === 'string' && (o.mistColor === 'none' || GLOWS[o.mistColor])) state.look.mistColor = o.mistColor;
       if (o && typeof o.kbLen === 'number') state.look.kbLen = Math.max(0, Math.min(100, Math.round(o.kbLen)));
       if (o && typeof o.bgBlur === 'number') state.look.bgBlur = Math.max(0, Math.min(20, Math.round(o.bgBlur)));
@@ -1451,6 +1452,21 @@
     ctx.rect(0, 0, w, hitY);
     ctx.clip();
 
+    if (state.keyMarks && state.keyMarks.length) {
+      for (var kmi = 0; kmi < state.keyMarks.length; kmi++) {
+        var km = state.keyMarks[kmi];
+        var ky2 = hitY - (km.time - t) * pps;
+        if (ky2 < -30 || ky2 > hitY + 2) continue;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 209, 102, 0.5)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(0, ky2); ctx.lineTo(w, ky2); ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 225, 150, 0.92)';
+        ctx.font = '600 11px sans-serif';
+        ctx.fillText(km.label, 10, ky2 + 14);
+        ctx.restore();
+      }
+    }
     if (state.look.barlines && state.bars && state.bars.length) {
       ctx.strokeStyle = 'rgba(160, 200, 255, 0.13)';
       ctx.lineWidth = 1;
@@ -1964,6 +1980,7 @@
 
   async function loadScoreFile(file) {
     var buf = await file.arrayBuffer();
+    try { addLib(file.name, buf); } catch (e) {}
     var xml;
     if (/\.mxl$/i.test(file.name)) xml = await MusicXML.unzipMXL(buf);
     else xml = new TextDecoder('utf-8').decode(buf);
@@ -2012,6 +2029,11 @@
     state.lastFrame = now;
 
     var t = songTime();
+    if (state.keyMarks && state.keyMarks.length) {
+      var ck = '';
+      for (var ki2 = 0; ki2 < state.keyMarks.length; ki2++) { if (state.keyMarks[ki2].time <= t + 0.001) ck = state.keyMarks[ki2].label; else break; }
+      if (ck && ck !== state.curKey) { state.curKey = ck; var skEl = $('songKey'); if (skEl) skEl.textContent = ck; }
+    }
     state.fpsFrames++;
     state.fpsAcc += dt;
     if (state.fpsAcc >= 0.5) {
@@ -2122,9 +2144,20 @@
     $('timeTotal').textContent = fmtTime(state.duration);
   }
 
+  var KEY_MAJ = { '-7':'Cb','-6':'Gb','-5':'Db','-4':'Ab','-3':'Eb','-2':'Bb','-1':'F','0':'C','1':'G','2':'D','3':'A','4':'E','5':'B','6':'F#','7':'C#' };
+  var KEY_MIN = { '-7':'Ab','-6':'Eb','-5':'Bb','-4':'F','-3':'C','-2':'G','-1':'D','0':'A','1':'E','2':'B','3':'F#','4':'C#','5':'G#','6':'D#','7':'A#' };
+  function keyLabelFor(fifths, mode) {
+    var f = Math.max(-7, Math.min(7, fifths | 0));
+    var minor = mode === 'minor';
+    var n = (minor ? KEY_MIN : KEY_MAJ)[String(f)] || 'C';
+    return n + (minor ? ' 小调' : ' 大调');
+  }
   function loadParsed(parsed, fallbackName) {
     pause();
     state.notes = parsed.notes;
+    state.keyMarks = []; state.curKey = '';
+    if (parsed.keys && parsed.keys.length) { for (var qk = 0; qk < parsed.keys.length; qk++) state.keyMarks.push({ time: parsed.keys[qk].time, label: keyLabelFor(parsed.keys[qk].fifths, parsed.keys[qk].mode) }); }
+    else if (parsed.key && parsed.key.label) state.keyMarks.push({ time: 0, label: parsed.key.label });
     // 左右手：多轨按各轨平均音高分组，单轨按 C4 分界
     var tSum = {}, tCnt = {};
     for (var hi0 = 0; hi0 < parsed.notes.length; hi0++) {
@@ -2222,6 +2255,59 @@
     } catch (e) { /* ignore */ }
   }
 
+
+  // ---------------- 顶栏收起 / 文件库 ----------------
+  function applyCollapse() {
+    var tb = $('topbar'), op = $('topOpen');
+    if (tb) tb.classList.toggle('top-hidden', !!state.look.collapsed);
+    if (op) op.classList.toggle('show', !!state.look.collapsed);
+  }
+  var LIB_KEY = 'midiPiano.lib';
+  var libKind = 'all';
+  function getLib() { try { return JSON.parse(localStorage.getItem(LIB_KEY) || '[]'); } catch (e) { return []; } }
+  function setLib(v) { try { localStorage.setItem(LIB_KEY, JSON.stringify(v)); } catch (e) { toast('文件库已满，未能保存'); } }
+  function bufToB64(buf) { var u = new Uint8Array(buf), s = ''; for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); }
+  function b64ToArray(s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+  function addLib(name, buf) {
+    try {
+      var b = bufToB64(buf);
+      if (b.length > 2000000) return;
+      var lib = getLib();
+      lib = lib.filter(function (e) { return e.name !== name || e.data !== b; });
+      lib.unshift({ id: 'f' + Date.now(), name: name, kind: /\.(mid|midi)$/i.test(name) ? 'midi' : 'xml', data: b, ts: Date.now() });
+      if (lib.length > 8) lib.length = 8;
+      setLib(lib);
+    } catch (e) {}
+  }
+  function openLib(kind) { libKind = kind || 'all'; renderLib(); var l = $('lib'); if (l) l.classList.remove('hidden'); }
+  function closeLib() { var l = $('lib'); if (l) l.classList.add('hidden'); }
+  function renderLib() {
+    var list = $('libList'); if (!list) return;
+    var lib = getLib().filter(function (e) { return libKind === 'all' || e.kind === libKind; });
+    list.innerHTML = '';
+    if (!lib.length) { var em = document.createElement('div'); em.className = 'lib-empty'; em.textContent = '还没有文件，点下面导入一个'; list.appendChild(em); return; }
+    lib.forEach(function (e) {
+      var b = document.createElement('button'); b.className = 'lib-item';
+      var d = new Date(e.ts); b.innerHTML = '<b>' + e.name.replace(/</g, '&lt;') + '</b><small>' + (e.kind === 'midi' ? 'MIDI' : 'MusicXML') + ' · ' + d.toLocaleDateString() + '</small>';
+      b.onclick = function () {
+        var buf = b64ToArray(e.data).buffer;
+        closeLib();
+        if (e.kind === 'midi') loadMidiBuffer(buf, e.name);
+        else loadScoreFile(new File([buf], e.name));
+      };
+      list.appendChild(b);
+    });
+  }
+  function bindLib() {
+    var hm = $('homeLibMidi'), hx = $('homeLibXml');
+    if (hm) hm.addEventListener('click', function () { openLib('midi'); });
+    if (hx) hx.addEventListener('click', function () { openLib('xml'); });
+    var lc = $('libClose'); if (lc) lc.addEventListener('click', closeLib);
+    var im = $('libImportMidi'); if (im) im.addEventListener('click', function () { closeLib(); $('midiFile').click(); });
+    var ix = $('libImportXml'); if (ix) ix.addEventListener('click', function () { closeLib(); $('btnScore').click(); });
+    var tc = $('topCollapse'); if (tc) tc.addEventListener('click', function () { state.look.collapsed = true; saveLook(); applyCollapse(); });
+    var to = $('topOpen'); if (to) to.addEventListener('click', function () { state.look.collapsed = false; saveLook(); applyCollapse(); });
+  }
   function bindUI() {
     $('btnMidi').addEventListener('click', function () { $('midiFile').click(); });
     $('btnBg').addEventListener('click', function () { $('bgFile').click(); });
@@ -2368,7 +2454,7 @@
       var f = e.target.files && e.target.files[0];
       if (!f) return;
       var reader = new FileReader();
-      reader.onload = function () { loadMidiBuffer(reader.result, f.name); };
+      reader.onload = function () { addLib(f.name, reader.result); loadMidiBuffer(reader.result, f.name); };
       reader.onerror = function () { toast('读取文件失败'); };
       reader.readAsArrayBuffer(f);
       e.target.value = '';
@@ -2639,6 +2725,8 @@
     bindUI();
     bindScoreUI();
     bindTutorial();
+    bindLib();
+    applyCollapse();
     applyLookUI();
     try { if (ensureAudio()) { /* 预解码钢琴采样 */ } } catch (e) { /* 无音频环境 */ }
     updateTransport(0);

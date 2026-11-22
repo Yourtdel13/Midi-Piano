@@ -14,11 +14,13 @@
 <header id="topbar">
   <div class="brand"><span class="dot"></span>MIDI 钢琴</div>
   <div class="actions">
+    <button id="topCollapse" class="chip icon" aria-label="收起工具栏">›</button>
     <button id="btnMidi" class="chip">♪ 导入 MIDI</button>
     <button id="btnBg" class="chip">🖼 背景</button>
           <button id="btnScore" class="chip" aria-label="导入乐谱">🎼 乐谱</button>
   </div>
 </header>
+<button id="topOpen" class="chip icon top-open hidden" aria-label="展开工具栏">‹</button>
 <button id="btnLook" class="chip icon look-fab" aria-label="外观设置">⚙</button>
 
 <div id="home" class="home">
@@ -27,6 +29,10 @@
   <div class="home-aurora a3"></div>
   <div class="home-notes" aria-hidden="true">
     <span>♪</span><span>♫</span><span>♩</span><span>♬</span><span>♪</span><span>♫</span>
+  </div>
+  <div class="home-side">
+    <button id="homeLibMidi" class="side-btn" aria-label="MIDI 文件库"><b>♪</b><span>MIDI</span></button>
+    <button id="homeLibXml" class="side-btn" aria-label="乐谱文件库"><b>🎼</b><span>乐谱</span></button>
   </div>
   <div class="home-inner">
     <div class="home-kicker">MIDI · PIANO</div>
@@ -54,10 +60,21 @@
         <span class="hb-txt"><b>退出</b><em>关闭应用</em></span>
       </button>
     </div>
-    <div class="home-foot">DSH · v3.26</div>
+    <div class="home-foot">DSH · v3.27</div>
   </div>
 </div>
 
+<div id="lib" class="lib hidden">
+  <div class="lib-card">
+    <div class="lib-head"><h2>文件库</h2><button id="libClose" aria-label="关闭文件库">✕</button></div>
+    <p class="lib-sub">加载过的 MIDI / MusicXML 会保存在这里，下次点一下就能重新加载。</p>
+    <div id="libList" class="lib-list"></div>
+    <div class="lib-actions">
+      <button id="libImportMidi" class="opt">导入 MIDI</button>
+      <button id="libImportXml" class="opt">导入 MusicXML</button>
+    </div>
+  </div>
+</div>
 <div id="tutorial" class="tut hidden">
   <div class="tut-card">
     <div class="tut-head"><span id="tutStep">1 / 7</span><button id="tutClose" aria-label="关闭教学">✕</button></div>
@@ -212,11 +229,6 @@
       <button class="opt" data-sidebar="on">显示</button>
       <button class="opt" data-sidebar="off">隐藏</button>
     </div>
-    <div class="sheet-label">上方工具栏</div>
-    <div class="opt-row" id="topbarOpts">
-      <button class="opt" data-topbar="on">显示</button>
-      <button class="opt" data-topbar="off">隐藏</button>
-    </div>
     <div class="sheet-sep"></div>
         <div class="sheet-label">乐谱</div>
         <div class="opt-row">
@@ -322,6 +334,6 @@
 <script src="piano.js?v=22"></script>
 <script src="musicxml.js?v=26"></script>
   <script src="demo-mxl.js?v=27"></script>
-  <script src="app.js?v=34?v=22"></script>
+  <script src="app.js?v=35?v=22"></script>
 </body>
 </html>
