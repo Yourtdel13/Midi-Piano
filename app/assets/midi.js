@@ -68,7 +68,7 @@
     var timeSigs = [];
     var pedalEvents = [];
     var chVol = {}, chExp = {};
-    var keySig = null;
+    var keySig = null, keyEvents = [];
     var trackName = '';
     var parsedTracks = 0;
 
@@ -106,6 +106,7 @@
             tempos.push({ tick: tick, us: us });
           } else if (type === 0x59 && mlen === 2) {
             keySig = { sf: dv.getInt8(pos), mi: dv.getUint8(pos + 1) };
+            keyEvents.push({ tick: tick, sf: keySig.sf, mi: keySig.mi });
           } else if (type === 0x58 && mlen >= 2) {
             timeSigs.push({
               tick: tick,
@@ -264,11 +265,10 @@
 
     for (var pn = 0; pn < notes.length; pn++) {
       var nn = notes[pn];
-      var ints = pedalIntervals[nn.channel];
-      if (!ints) continue;
+      var ints = mergedPedals;
       for (var ii = 0; ii < ints.length; ii++) {
         var iv = ints[ii];
-        if (iv.start <= nn.end + 1e-4 && nn.end <= iv.end + 1e-4) {
+        if (iv.start <= nn.end + 0.12 && nn.end <= iv.end + 1e-4) {
           // 视觉上仍按琴键松开画，声音延音到踏板抬起
           if (iv.end > nn.soundEnd + 1e-4) {
             nn.soundEnd = iv.end;
@@ -327,6 +327,19 @@
       };
     }
 
+    var keys = [];
+    (function () {
+      var seen = {};
+      for (var ke = 0; ke < keyEvents.length; ke++) {
+        var ev3 = keyEvents[ke];
+        var tm = tickToSec(ev3.tick);
+        var kk = tm.toFixed(3) + '|' + ev3.sf + '|' + ev3.mi;
+        if (seen[kk]) continue;
+        seen[kk] = 1;
+        keys.push({ time: tm, fifths: ev3.sf, mode: ev3.mi === 1 ? 'minor' : 'major' });
+      }
+      keys.sort(function (a, b) { return a.time - b.time; });
+    })();
     var key = keySig ? keyFromSignature(keySig.sf, keySig.mi) : estimateKey(notes);
 
     // ---- 小节线：按拍号 meta 计算每小节起始秒数 ----
@@ -359,6 +372,7 @@
       trackCount: Object.keys(trackSet).length,
       ticksPerQuarter: ticksPerQuarter,
       pedals: mergedPedals,
+      keys: keys,
       key: key,
       bars: bars
     };

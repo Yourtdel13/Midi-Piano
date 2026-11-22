@@ -604,3 +604,8 @@ body.tut-on #stage { visibility: hidden; }
 /* 首页左侧文件入口留白 */
 .home { padding-left: 84px; padding-right: 14px; }
 @media (orientation: landscape) and (max-height: 620px) { .home { padding-left: 84px; } }
+
+/* 收起后 ‹ 位于设置键左侧，并真正屏蔽隐藏按钮 */
+.top-open { left: auto; right: 62px; top: calc(10px + env(safe-area-inset-top)); }
+#topbar.top-hidden { visibility: hidden; }
+#topbar.top-hidden .actions { pointer-events: none; }
