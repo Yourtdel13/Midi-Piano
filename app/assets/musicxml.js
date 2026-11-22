@@ -24,7 +24,7 @@
     var divisions = 1, tempo = 120, beats = 4, beatType = 4, keyFifths = 0, keyMode = 'major';
     var t = 0, tempoMap = [{ d: 0, bpm: tempo }], lastStart = 0;
     var openOttava = null, openEnding = null, openWedge = null;
-    var tieStarts = [], slurStarts = {}, pendingGrace = [], gStarts = [];
+    var tieStarts = [], slurStarts = {}, pendingGrace = [], gStarts = [], keys = [];
 
     function secAt(d) {
       var sec = 0, prevD = 0, bpm = tempoMap[0].bpm;
