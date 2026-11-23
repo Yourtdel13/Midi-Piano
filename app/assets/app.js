@@ -665,6 +665,7 @@
     var ps = state.particles;
     for (var i = start; i < state.notes.length; i++) {
       var n = state.notes[i];
+      if (n.glass) continue;
       if (n.start > t + 2.4) break;
       if (n.end < t - 0.05) continue;
       var k = state.keyMap[n.midi];
@@ -1856,8 +1857,9 @@
     function fwdBefore(i) { for (var k = i; k >= 0; k--) if (fwd[k]) return k; return 0; }
     var dyns = (sc.dynamics || []).slice().sort(function (a, b) { return a.time - b.time; });
     function dynAt(tt) {
-      var g = 1;
-      for (var di = 0; di < dyns.length; di++) { if (dyns[di].time <= tt + 0.001) g = dyns[di].gain; else break; }
+      var g = 1, lastDyn = null;
+      for (var di = 0; di < dyns.length; di++) { if (dyns[di].time <= tt + 0.001) { g = dyns[di].gain; lastDyn = dyns[di]; } else break; }
+      if (lastDyn && lastDyn.label === 'fp' && tt > lastDyn.time + 0.15) g *= 0.35;
       var ws = sc.wedges || [];
       for (var wi2 = 0; wi2 < ws.length; wi2++) {
         var wg2 = ws[wi2];
@@ -1933,10 +1935,24 @@
         var dg = dynAt(nn.start);
         var vel0 = Math.max(0.05, Math.min(1.25, (arts.accent ? 0.98 : 0.72) * dg));
         notes.push({ midi: nn.midi + (nn.ottava || 0), start: st0, dur: dur0, end: st0 + dur0,
-          velocity: vel0, vol: 1, channel: 0, track: 0, tieStop: !!nn.tieStop, art: arts, hand: nn.staff === 2 ? 'L' : 'R' });
+          velocity: vel0, vol: 1, channel: 0, track: 0, tieStop: !!nn.tieStop, art: arts, hand: nn.staff === 2 ? 'L' : 'R',
+          glissTo: (arts.gliss === 'start' && nn.glissTo) ? { midi: nn.glissTo.midi, start: nn.glissTo.start, dur: nn.glissTo.dur } : null });
       });
       cur += len;
     });
+    notes.sort(function (a, b) { return a.start - b.start; });
+    var glissRun = [];
+    notes.forEach(function (gn) {
+      if (!gn.glissTo) return;
+      var gs = gn.start, ge = Math.max(gs + 0.06, gn.glissTo.start);
+      var m0 = gn.midi, m1 = gn.glissTo.midi, steps = Math.max(4, Math.min(14, Math.abs(m1 - m0)));
+      for (var gi2 = 1; gi2 < steps; gi2++) {
+        var f2 = gi2 / steps;
+        glissRun.push({ midi: m0 + (m1 - m0) * f2, start: gs + (ge - gs) * f2, dur: 0.06, end: gs + (ge - gs) * f2 + 0.06,
+          velocity: 0.32, vol: 1, channel: 0, track: 0, hand: gn.hand, glass: true });
+      }
+    });
+    if (glissRun.length) notes = notes.concat(glissRun);
     notes.sort(function (a, b) { return a.start - b.start; });
     // 延音线合并：tie 的后续音不重新起音，只延长前一个音的时值
     var lastByMidi = {};
@@ -1989,7 +2005,7 @@
     var perf = buildScorePerformance(sc);
     if (perf && perf.notes.length) {
       var parsed = { notes: perf.notes, duration: perf.duration, name: sc.title || '乐谱', trackCount: 1, pedals: [], bars: [],
-        key: { label: keyNameOf(sc), source: 'meta' } };
+        key: { label: keyNameOf(sc), source: 'meta' }, keys: sc.keys };
       state.score = sc;
       state.scoreSegments = perf.segments;
       loadParsed(parsed, sc.title || file.name);
