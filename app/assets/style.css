@@ -613,3 +613,5 @@ body.tut-on #stage { visibility: hidden; }
 .lib-item { position: relative; padding-right: 40px; }
 .lib-del { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--muted); background: rgba(255,255,255,.06); font-size: 12px; }
 .lib-del:active { background: rgba(255,90,100,.25); color: #ffb3b3; }
+
+.top-open { right: 58px; top: calc(12px + env(safe-area-inset-top)); padding: 0; align-items: center; justify-content: center; font-size: 18px; line-height: 1; }

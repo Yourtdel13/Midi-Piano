@@ -60,7 +60,7 @@
         <span class="hb-txt"><b>退出</b><em>关闭应用</em></span>
       </button>
     </div>
-    <div class="home-foot">DSH · v3.34</div>
+    <div class="home-foot">DSH · v3.35</div>
   </div>
 </div>
 
@@ -162,6 +162,16 @@
     <div class="opt-row scroll" id="glowROpts"><button class="opt" data-glowr="none">关</button><button class="opt" data-glowr="white">白</button><button class="opt" data-glowr="gold">金</button><button class="opt" data-glowr="blue">蓝</button><button class="opt" data-glowr="teal">青</button><button class="opt" data-glowr="purple">紫</button><button class="opt" data-glowr="pink">粉</button><button class="opt" data-glowr="red">红</button><button class="opt" data-glowr="green">绿</button><button class="opt" data-glowr="orange">橙</button></div>
     <div class="sheet-label">泛光强度 <span class="sub" id="glowLevelVal">Medium</span></div>
     <input id="glowLevel" class="amb-range" type="range" min="0" max="3" step="1" value="1" aria-label="泛光强度">
+    <div class="sheet-label">下落音符粒子</div>
+    <div class="opt-row" id="npOnOpts"><button class="opt" data-np="on">开</button><button class="opt" data-np="off">关</button></div>
+    <div class="sheet-label">粒子产生区域</div>
+    <div class="opt-row" id="npRegionOpts"><button class="opt" data-npr="tail">下沿</button><button class="opt" data-npr="whole">整条</button><button class="opt" data-npr="head">顶部</button></div>
+    <div class="sheet-label">左轨粒子颜色</div>
+    <div class="opt-row scroll" id="npLOpts"><button class="opt" data-npc="white" data-side="l">白</button><button class="opt" data-npc="gold" data-side="l">金</button><button class="opt" data-npc="blue" data-side="l">蓝</button><button class="opt" data-npc="teal" data-side="l">青</button><button class="opt" data-npc="purple" data-side="l">紫</button><button class="opt" data-npc="pink" data-side="l">粉</button><button class="opt" data-npc="red" data-side="l">红</button><button class="opt" data-npc="green" data-side="l">绿</button><button class="opt" data-npc="orange" data-side="l">橙</button><button class="opt" data-npc="lime" data-side="l">青柠</button><button class="opt" data-npc="pear" data-side="l">青梨</button><button class="opt" data-npc="azure" data-side="l">碧青</button></div>
+    <div class="sheet-label">右轨粒子颜色</div>
+    <div class="opt-row scroll" id="npROpts"><button class="opt" data-npc="white" data-side="r">白</button><button class="opt" data-npc="gold" data-side="r">金</button><button class="opt" data-npc="blue" data-side="r">蓝</button><button class="opt" data-npc="teal" data-side="r">青</button><button class="opt" data-npc="purple" data-side="r">紫</button><button class="opt" data-npc="pink" data-side="r">粉</button><button class="opt" data-npc="red" data-side="r">红</button><button class="opt" data-npc="green" data-side="r">绿</button><button class="opt" data-npc="orange" data-side="r">橙</button><button class="opt" data-npc="lime" data-side="r">青柠</button><button class="opt" data-npc="pear" data-side="r">青梨</button><button class="opt" data-npc="azure" data-side="r">碧青</button></div>
+    <div class="sheet-label">粒子数量 <span class="sub" id="npCountVal">正常</span></div>
+    <input id="npCount" class="amb-range" type="range" min="0" max="3" step="1" value="1" aria-label="下落音符粒子数量">
     <div class="sheet-label">左手轨道颜色</div>
     <div class="opt-row swatch-row" id="lcOpts">
       <button class="opt swatch" data-lcolor="red"><i style="--c1:#ffe9ee;--c2:#ff3d5a"></i>红</button>
@@ -334,6 +344,6 @@
 <script src="piano.js?v=22"></script>
 <script src="musicxml.js?v=41"></script>
   <script src="demo-mxl.js?v=27"></script>
-  <script src="app.js?v=40?v=22"></script>
+  <script src="app.js?v=41?v=22"></script>
 </body>
 </html>

@@ -21,7 +21,7 @@
     look: { bgBlur: 0, perfAuto: false, shape: 'capsule', fx: 'splash', gradient: 'random', pedal: true, topbar: true,
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
       leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true, collapsed: false,
-      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20,
+      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' },
       score: { on: true, glow: true, color: 'white', pos: 12, size: 1, glowLevel: 1, bgAlpha: 0.72 } },
     freePlay: false, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
@@ -663,6 +663,10 @@
     var pps = state.pxPerSec * state.speed * (state.view.vzoom || 1);
     var start = lowerBound(state.notes, t - 1.0);
     var ps = state.particles;
+    var np = state.look.np || {};
+    if (np.on === false) return;
+    var npMul = [0.35, 1, 1.8, 2.6][np.count | 0] || 1;
+    var npCap = [280, 700, 1050, 1500][np.count | 0] || 700;
     for (var i = start; i < state.notes.length; i++) {
       var n = state.notes[i];
       if (n.glass) continue;
@@ -670,9 +674,13 @@
       if (n.end < t - 0.05) continue;
       var k = state.keyMap[n.midi];
       if (!k) continue;
-      if (Math.random() > dt * (state.pedalOn ? (state.lowQ ? 10 : 20) : (state.lowQ ? 7 : 14))) continue;
+      if (Math.random() > dt * npMul * (state.pedalOn ? (state.lowQ ? 10 : 20) : (state.lowQ ? 7 : 14))) continue;
       var y = state.hitY - (n.start - t) * pps;
+      var yTop = state.hitY - (n.end - t) * pps;
+      if (np.region === 'whole') y = Math.min(y, yTop) + Math.random() * Math.max(2, Math.abs(y - yTop));
+      else if (np.region === 'head') y = Math.min(y, yTop) + Math.random() * 3;
       if (y < -12 || y > state.hitY + 6) continue;
+      var npCol = (handOf(n) === 'L' ? np.lc : np.rc);
       ps.push({
         x: k.x + Math.random() * k.w,
         y: y + Math.random() * 3,
@@ -681,12 +689,12 @@
         life: 0,
         max: 0.3 + Math.random() * 0.5,
         size: 1.4 + Math.random() * 2.0,
-        color: noteColor(n),
+        color: npCol ? (NP_HEX[npCol] || noteColor(n)) : noteColor(n),
         soft: true,
         grav: -12
       });
     }
-    if (ps.length > 700) ps.splice(0, ps.length - 700);
+    if (ps.length > npCap) ps.splice(0, ps.length - npCap);
   }
 
   function updateParticles(dt) {
@@ -847,6 +855,7 @@
     white: '#ffffff', gold: '#ffd166', blue: '#5eb8ff', teal: '#4de8d0',
     purple: '#b07bff', pink: '#ff7fc4', red: '#ff5a6a', green: '#4ade80', orange: '#ff9a3d'
   };
+  var NP_HEX = { white: '#ffffff', gold: '#ffd166', blue: '#5eb8ff', teal: '#4de8d0', purple: '#b07bff', pink: '#ff7fc4', red: '#ff5a6a', green: '#4ade80', orange: '#ff9a3d', lime: '#c8f04a', pear: '#9BB344', azure: '#41B5C2' };
 
   var HAND = {
     L: { light: '#ffe8e8', base: '#e63946', deep: '#7a0c14' },
@@ -957,6 +966,14 @@
       if (typeof o.mistPower === 'number') state.look.mistPower = Math.max(0, Math.min(3, Math.round(o.mistPower)));
       if (typeof o.mistLife === 'number') state.look.mistLife = Math.max(0.5, Math.min(2, o.mistLife));
       if (typeof o.collapsed === 'boolean') state.look.collapsed = o.collapsed;
+      if (o && o.np && typeof o.np === 'object') {
+        var npv = o.np;
+        if (typeof npv.on === 'boolean') state.look.np.on = npv.on;
+        if (npv.region === 'tail' || npv.region === 'whole' || npv.region === 'head') state.look.np.region = npv.region;
+        if (typeof npv.count === 'number') state.look.np.count = Math.max(0, Math.min(3, Math.round(npv.count)));
+        if (typeof npv.lc === 'string' && (!npv.lc || NP_HEX[npv.lc])) state.look.np.lc = npv.lc;
+        if (typeof npv.rc === 'string' && (!npv.rc || NP_HEX[npv.rc])) state.look.np.rc = npv.rc;
+      }
       if (o && typeof o.mistColor === 'string' && (o.mistColor === 'none' || GLOWS[o.mistColor])) state.look.mistColor = o.mistColor;
       if (o && typeof o.kbLen === 'number') state.look.kbLen = Math.max(0, Math.min(100, Math.round(o.kbLen)));
       if (o && typeof o.bgBlur === 'number') state.look.bgBlur = Math.max(0, Math.min(20, Math.round(o.bgBlur)));
@@ -990,6 +1007,12 @@
     for (var p = 0; p < peds.length; p++) peds[p].classList.toggle('active', (peds[p].getAttribute('data-pedal') === 'on') === !!state.look.pedal);
     var ambs = document.querySelectorAll('#ambOpts .opt');
     for (var a = 0; a < ambs.length; a++) ambs[a].classList.toggle('active', ambs[a].getAttribute('data-amb') === state.look.amb);
+    var npcs = $('npCount');
+    if (npcs) npcs.addEventListener('input', function () {
+      state.look.np.count = Math.max(0, Math.min(3, +npcs.value || 0));
+      var v = $('npCountVal'); if (v) v.textContent = ['少量', '正常', '略多', '非常多'][state.look.np.count];
+      saveLook();
+    });
     var ad = $('ambDensity');
     if (ad) ad.value = String(Math.max(0, Math.min(3, state.look.ambDensity | 0)));
     var sc2 = state.look.score;
@@ -1032,6 +1055,16 @@
     if (gvl) gvl.value = String(state.look.glowLevel | 0);
     var gvv = $('glowLevelVal');
     if (gvv) gvv.textContent = ['Low', 'Medium', 'High', 'Max'][Math.max(0, Math.min(3, state.look.glowLevel | 0))];
+    var npo = document.querySelectorAll('#npOnOpts .opt');
+    for (var no = 0; no < npo.length; no++) npo[no].classList.toggle('active', (npo[no].getAttribute('data-np') === 'on') === !!state.look.np.on);
+    var npr = document.querySelectorAll('#npRegionOpts .opt');
+    for (var nr = 0; nr < npr.length; nr++) npr[nr].classList.toggle('active', npr[nr].getAttribute('data-npr') === state.look.np.region);
+    var npl = document.querySelectorAll('#npLOpts .opt');
+    for (var nl = 0; nl < npl.length; nl++) npl[nl].classList.toggle('active', npl[nl].getAttribute('data-npc') === state.look.np.lc);
+    var nprr = document.querySelectorAll('#npROpts .opt');
+    for (var nq = 0; nq < nprr.length; nq++) nprr[nq].classList.toggle('active', nprr[nq].getAttribute('data-npc') === state.look.np.rc);
+    var npc = $('npCount'); if (npc) npc.value = String(state.look.np.count | 0);
+    var npv2 = $('npCountVal'); if (npv2) npv2.textContent = ['少量', '正常', '略多', '非常多'][Math.max(0, Math.min(3, state.look.np.count | 0))];
     var lns = document.querySelectorAll('#lineOpts .opt');
     for (var ln = 0; ln < lns.length; ln++) lns[ln].classList.toggle('active', lns[ln].getAttribute('data-line') === state.look.lineColor);
     var lls = document.querySelectorAll('#lineLevelOpts [data-linelevel]'); for (var li = 0; li < lls.length; li++) lls[li].classList.toggle('active', +lls[li].getAttribute('data-linelevel') === state.look.linePower);
@@ -1944,12 +1977,14 @@
     var glissRun = [];
     notes.forEach(function (gn) {
       if (!gn.glissTo) return;
-      var gs = gn.start, ge = Math.max(gs + 0.06, gn.glissTo.start);
-      var m0 = gn.midi, m1 = gn.glissTo.midi, steps = Math.max(4, Math.min(14, Math.abs(m1 - m0)));
+      var gs = gn.start, ge = Math.max(gs + 0.08, gn.glissTo.start);
+      var hi = Math.max(gn.midi, gn.glissTo.midi), lo = Math.min(gn.midi, gn.glissTo.midi);
+      var steps = Math.max(6, Math.min(24, hi - lo + 1));
       for (var gi2 = 1; gi2 < steps; gi2++) {
         var f2 = gi2 / steps;
-        glissRun.push({ midi: m0 + (m1 - m0) * f2, start: gs + (ge - gs) * f2, dur: 0.06, end: gs + (ge - gs) * f2 + 0.06,
-          velocity: 0.32, vol: 1, channel: 0, track: 0, hand: gn.hand, glass: true });
+        var gst = gs + (ge - gs) * f2 * 0.92;
+        glissRun.push({ midi: hi + (lo - hi) * f2, start: gst, dur: 0.09, end: gst + 0.09,
+          velocity: 0.42, vol: 1, channel: 0, track: 0, hand: gn.hand, glass: true });
       }
     });
     if (glissRun.length) notes = notes.concat(glissRun);
@@ -2399,6 +2434,9 @@
         if (b.hasAttribute('data-glow')) state.look.glow = b.getAttribute('data-glow');
         if (b.hasAttribute('data-glowl')) state.look.glowL = b.getAttribute('data-glowl');
         if (b.hasAttribute('data-glowr')) state.look.glowR = b.getAttribute('data-glowr');
+        if (b.hasAttribute('data-np')) state.look.np.on = b.getAttribute('data-np') === 'on';
+        if (b.hasAttribute('data-npr')) state.look.np.region = b.getAttribute('data-npr');
+        if (b.hasAttribute('data-npc')) { var nside = b.getAttribute('data-side'); if (nside === 'l') state.look.np.lc = b.getAttribute('data-npc'); else state.look.np.rc = b.getAttribute('data-npc'); }
         if (b.hasAttribute('data-line')) state.look.lineColor = b.getAttribute('data-line');
         if (b.hasAttribute('data-mist')) state.look.mistColor = b.getAttribute('data-mist');
         if (b.hasAttribute('data-linelevel')) state.look.linePower = Math.max(0, Math.min(3, +b.getAttribute('data-linelevel') || 0));
