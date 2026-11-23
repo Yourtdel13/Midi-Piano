@@ -225,30 +225,32 @@
 
     notes.sort(function (a, b) { return a.start - b.start || a.midi - b.midi; });
 
-    // ---- 延音踏板（CC64）：踏板踩下期间松开的键延音到踏板抬起 ----
-    var pedalByCh = {};
+    // ---- 延音踏板（CC64）：全局保持，任意通道踩下即对所有音符生效 ----
     pedalEvents.sort(function (a, b) { return a.tick - b.tick; });
-    var pedalIntervals = {};
+    var mergedPedals = [], holdCount = 0, holdStart = -1;
     for (var pe = 0; pe < pedalEvents.length; pe++) {
       var ev2 = pedalEvents[pe];
-      var chHold = pedalByCh[ev2.ch];
+      var et = tickToSec(ev2.tick);
       if (ev2.down) {
-        if (!chHold) pedalByCh[ev2.ch] = { start: tickToSec(ev2.tick) };
-      } else if (chHold) {
-        (pedalIntervals[ev2.ch] = pedalIntervals[ev2.ch] || []).push({
-          start: chHold.start,
-          end: tickToSec(ev2.tick)
-        });
-        delete pedalByCh[ev2.ch];
+        if (holdCount === 0) holdStart = et;
+        holdCount++;
+      } else if (holdCount > 0) {
+        holdCount--;
+        if (holdCount === 0 && holdStart >= 0) {
+          mergedPedals.push({ start: holdStart, end: et });
+          holdStart = -1;
+        }
       }
     }
-    for (var chLeft in pedalByCh) {
-      (pedalIntervals[chLeft] = pedalIntervals[chLeft] || []).push({
-        start: pedalByCh[chLeft].start,
-        end: duration + 0.35
-      });
+    if (holdCount > 0 && holdStart >= 0) mergedPedals.push({ start: holdStart, end: duration + 0.35 });
+    mergedPedals.sort(function (a, b) { return a.start - b.start; });
+    var bridged = [];
+    for (var bp = 0; bp < mergedPedals.length; bp++) {
+      var b0 = mergedPedals[bp], bl = bridged[bridged.length - 1];
+      if (bl && b0.start <= bl.end + 0.35) bl.end = Math.max(bl.end, b0.end);
+      else bridged.push({ start: b0.start, end: b0.end });
     }
-
+    mergedPedals = bridged;
     var allPedals = [];
     for (var pch in pedalIntervals) allPedals = allPedals.concat(pedalIntervals[pch]);
     allPedals.sort(function (a, b) { return a.start - b.start; });

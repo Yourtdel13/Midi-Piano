@@ -615,3 +615,5 @@ body.tut-on #stage { visibility: hidden; }
 .lib-del:active { background: rgba(255,90,100,.25); color: #ffb3b3; }
 
 .top-open { right: 58px; top: calc(12px + env(safe-area-inset-top)); padding: 0; align-items: center; justify-content: center; font-size: 18px; line-height: 1; }
+
+#sheet .amb-range { width: 52%; }
