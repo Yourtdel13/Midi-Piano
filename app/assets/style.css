@@ -609,3 +609,7 @@ body.tut-on #stage { visibility: hidden; }
 .top-open { left: auto; right: 62px; top: calc(10px + env(safe-area-inset-top)); }
 #topbar.top-hidden { visibility: hidden; }
 #topbar.top-hidden .actions { pointer-events: none; }
+
+.lib-item { position: relative; padding-right: 40px; }
+.lib-del { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--muted); background: rgba(255,255,255,.06); font-size: 12px; }
+.lib-del:active { background: rgba(255,90,100,.25); color: #ffb3b3; }

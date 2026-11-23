@@ -2269,6 +2269,7 @@
   function bufToB64(buf) { var u = new Uint8Array(buf), s = ''; for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); }
   function b64ToArray(s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
   function addLib(name, buf) {
+    if (!/\.(mid|midi|mxl|musicxml|xml)$/i.test(name)) return;
     try {
       var b = bufToB64(buf);
       if (b.length > 2000000) return;
@@ -2289,6 +2290,10 @@
     lib.forEach(function (e) {
       var b = document.createElement('button'); b.className = 'lib-item';
       var d = new Date(e.ts); b.innerHTML = '<b>' + e.name.replace(/</g, '&lt;') + '</b><small>' + (e.kind === 'midi' ? 'MIDI' : 'MusicXML') + ' · ' + d.toLocaleDateString() + '</small>';
+      var del = document.createElement('span'); del.className = 'lib-del'; del.textContent = '✕'; del.setAttribute('role', 'button');
+      del.onclick = function (ev) { ev.stopPropagation(); setLib(getLib().filter(function (x) { return x.id !== e.id; })); renderLib(); };
+      b.appendChild(del);
+
       b.onclick = function () {
         var buf = b64ToArray(e.data).buffer;
         closeLib();

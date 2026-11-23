@@ -296,8 +296,8 @@
     ctx.save();
     ctx.fillStyle = color; ctx.strokeStyle = color; ctx.shadowBlur = 0; ctx.globalAlpha = 0.95;
     if (arts.accent) {
-      ctx.font = 'bold ' + (gap * 2.0) + 'px system-ui, sans-serif';
-      ctx.fillText('>', x - gap * 0.55, ay + gap * 0.55);
+      ctx.font = 'bold ' + (gap * 1.9) + 'px system-ui, sans-serif';
+      ctx.fillText('>', x - gap * 0.5, y + (up ? -gap * 0.55 : gap * 1.25));
     }
     if (arts.staccato) {
       ctx.beginPath(); ctx.arc(x, y + gap * 0.95, Math.max(1, gap * 0.24), 0, Math.PI * 2); ctx.fill();
@@ -405,13 +405,25 @@
         if (kk2 === 0 || !inWin(kk.time) || kk.time <= 0.001) continue;
         var kx = xOf(kk.time) + gap * 0.12;
         var kcnt = Math.abs(kk.fifths | 0), ksharp = (kk.fifths | 0) > 0;
+        ctx.save(); ctx.strokeStyle = color; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(xOf(kk.time), top1); ctx.lineTo(xOf(kk.time), top2 + staffH); ctx.stroke(); ctx.restore();
+        var pk = score.keys[kk2 - 1] || { fifths: 0 };
+        var pcnt = Math.abs(pk.fifths | 0), psharp = (pk.fifths | 0) > 0;
         for (var st3 = 0; st3 < 2; st3++) {
           var ktop = st3 === 0 ? top1 : top2;
           ctx.fillStyle = color; ctx.globalAlpha = 0.9;
           ctx.font = '600 ' + (gap * 1.9).toFixed(1) + 'px serif';
+          var kxo = kx;
+          if ((pk.fifths | 0) !== (kk.fifths | 0) && pcnt > 0) {
+            for (var pi3 = 0; pi3 < pcnt; pi3++) {
+              var pyy = ktop + gap * (psharp ? sharpPos[pi3] : flatPos[pi3]);
+              ctx.fillText('\u266E', kxo + pi3 * gap * 0.55, pyy + gap * 0.7);
+            }
+            kxo += pcnt * gap * 0.55 + gap * 0.18;
+          }
           for (var ki3 = 0; ki3 < kcnt; ki3++) {
             var kyy = ktop + gap * (ksharp ? sharpPos[ki3] : flatPos[ki3]);
-            ctx.fillText(ksharp ? '\u266F' : '\u266D', kx + ki3 * gap * 0.55, kyy + gap * 0.7);
+            ctx.fillText(ksharp ? '\u266F' : '\u266D', kxo + ki3 * gap * 0.55, kyy + gap * 0.7);
           }
         }
       }
@@ -853,13 +865,21 @@
       ctx.beginPath();
       var gx0 = ga2._px + 3, gy0 = ga2._py + (gb2._py > ga2._py ? 4 : -4);
       var gx1 = gb2._px - 3, gy1 = gb2._py + (gb2._py > ga2._py ? -4 : 4);
-      var gn2 = 10;
+      var gn2 = 12;
+      var gdx = gx1 - gx0, gdy = gy1 - gy0, glen = Math.max(1, Math.sqrt(gdx * gdx + gdy * gdy));
+      var gnx = -gdy / glen, gny = gdx / glen;
       ctx.moveTo(gx0, gy0);
       for (var gs2 = 1; gs2 <= gn2; gs2++) {
-        var gpf = gs2 / gn2;
-        ctx.lineTo(gx0 + (gx1 - gx0) * gpf, gy0 + (gy1 - gy0) * gpf + (gs2 % 2 ? 2.2 : -2.2));
+        var gpf = gs2 / gn2, gw2 = gs2 % 2 ? 2.4 : -2.4;
+        ctx.lineTo(gx0 + gdx * gpf + gnx * gw2, gy0 + gdy * gpf + gny * gw2);
       }
       ctx.stroke();
+      ctx.save();
+      ctx.globalAlpha = gAct ? 0.95 : 0.65;
+      ctx.fillStyle = gAct ? PLAYED : color;
+      ctx.font = 'italic ' + Math.max(9, gap * 1.15).toFixed(1) + 'px serif';
+      ctx.fillText('glass.', (gx0 + gx1) / 2 + 4, (gy0 + gy1) / 2 - 6);
+      ctx.restore();
       ctx.shadowBlur = 0;
     }
 
