@@ -230,6 +230,14 @@
     }
 
     notes.sort(function (a, b) { return a.start - b.start; });
+    var glStack = [];
+    for (var gq = 0; gq < notes.length; gq++) {
+      var gn = notes[gq];
+      if (!gn.arts) continue;
+      if (gn.arts.gliss === 'start') glStack.push(gn);
+      else if (gn.arts.gliss === 'stop' && glStack.length) { glStack.pop().glissTo = gn; }
+    }
+
     for (var k = 0; k < measures.length; k++) {
       if (measures[k].end <= measures[k].start) measures[k].end = measures[k].start + 0.01;
     }
@@ -389,6 +397,25 @@
     }
     var plotW = w - leftPad - rightPad;
     function xOf(tt) { return x0 + leftPad + (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW; }
+
+    // 小节内的转调调号（按 MXL 的 <key> 变化）
+    if (score.keys && score.keys.length) {
+      for (var kk2 = 0; kk2 < score.keys.length; kk2++) {
+        var kk = score.keys[kk2];
+        if (kk2 === 0 || !inWin(kk.time) || kk.time <= 0.001) continue;
+        var kx = xOf(kk.time) + gap * 0.12;
+        var kcnt = Math.abs(kk.fifths | 0), ksharp = (kk.fifths | 0) > 0;
+        for (var st3 = 0; st3 < 2; st3++) {
+          var ktop = st3 === 0 ? top1 : top2;
+          ctx.fillStyle = color; ctx.globalAlpha = 0.9;
+          ctx.font = '600 ' + (gap * 1.9).toFixed(1) + 'px serif';
+          for (var ki3 = 0; ki3 < kcnt; ki3++) {
+            var kyy = ktop + gap * (ksharp ? sharpPos[ki3] : flatPos[ki3]);
+            ctx.fillText(ksharp ? '\u266F' : '\u266D', kx + ki3 * gap * 0.55, kyy + gap * 0.7);
+          }
+        }
+      }
+    }
     function bottomRef(staff, time) {
       var sign = 'G', line = 2;
       var cs = score.clefs || [];
@@ -407,7 +434,7 @@
     // 小节线 + 反复
     for (var b = 0; b < ms.length; b++) {
       if (!inWin(ms[b].start)) continue;
-      var bx = xOf(ms[b].start);
+      var bx = xOf(ms[b].start) - gap * 0.55;
       ctx.globalAlpha = 0.3; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(bx, top1); ctx.lineTo(bx, top2 + staffH); ctx.stroke();
     }
@@ -823,8 +850,14 @@
       ctx.shadowBlur = gAct && opts.glow ? (opts.glowBlur || 10) * 0.7 : 0;
       ctx.lineWidth = Math.max(1, 1.4 * size);
       ctx.beginPath();
-      ctx.moveTo(ga2._px + 3, ga2._py + (gb2._py > ga2._py ? 4 : -4));
-      ctx.lineTo(gb2._px - 3, gb2._py + (gb2._py > ga2._py ? -4 : 4));
+      var gx0 = ga2._px + 3, gy0 = ga2._py + (gb2._py > ga2._py ? 4 : -4);
+      var gx1 = gb2._px - 3, gy1 = gb2._py + (gb2._py > ga2._py ? -4 : 4);
+      var gn2 = 10;
+      ctx.moveTo(gx0, gy0);
+      for (var gs2 = 1; gs2 <= gn2; gs2++) {
+        var gpf = gs2 / gn2;
+        ctx.lineTo(gx0 + (gx1 - gx0) * gpf, gy0 + (gy1 - gy0) * gpf + (gs2 % 2 ? 2.2 : -2.2));
+      }
       ctx.stroke();
       ctx.shadowBlur = 0;
     }

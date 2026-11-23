@@ -1952,7 +1952,7 @@
       lastByMidi[ev.midi] = ev;
     }
     notes = notes.filter(function (e) { return !e._drop; });
-    return { notes: notes, duration: cur, segments: segments };
+    return { notes: notes, duration: cur, segments: segments, keys: sc.keys, clefs: sc.clefs, measures: sc.measures, repeats: sc.repeats, endings: sc.endings, directions: sc.directions, dynamics: sc.dynamics, wedges: sc.wedges };
   }
 
   function orderInfo(perf) {
