@@ -1549,11 +1549,11 @@
       var top = hitY - (n.end - t) * pps;
       var bottom = hitY - (n.start - t) * pps;
       var hgt = bottom - top;
-      var minH = n.glass ? 9 : 5;
+      var minH = n.glass ? 13 : 5;
       if (hgt < minH) hgt = minH;
       if (bottom < -10 || top > hitY) continue;
 
-      var color = noteColor(n);
+      var color = n.glass ? '#ffffff' : noteColor(n);
       var active = t >= n.start && t <= n.end;
       // shadowBlur 在移动端每帧都很贵，用一层半透明轮廓代替外发光
       if (active || state.pedalOn) {
@@ -2005,7 +2005,7 @@
       for (var gi2 = 1; gi2 < steps; gi2++) {
         var f2 = gi2 / steps;
         var gst = gs + (ge - gs) * f2 * 0.92;
-        glissRun.push({ midi: hi + (lo - hi) * f2, start: gst, dur: 0.16, end: gst + 0.16,
+        glissRun.push({ midi: Math.round(hi + (lo - hi) * f2), start: gst, dur: 0.25, end: gst + 0.25,
           velocity: 0.42, vol: 1, channel: 0, track: 0, hand: gn.hand, glass: true });
       }
     });
