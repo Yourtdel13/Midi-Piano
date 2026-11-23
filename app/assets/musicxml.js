@@ -508,6 +508,7 @@
     var heads = [], restHeads = [];
     for (var k = 0; k < score.notes.length; k++) {
       var nn = score.notes[k];
+      if (nn.start > winEnd + 0.4) break;
       if (!inWin(nn.start)) continue;
       var shift = 0; // 8va/8vb 只影响发声，谱面保持原谱写法
       if (nn.rest) {
