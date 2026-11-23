@@ -669,7 +669,6 @@
     var npCap = [280, 700, 1050, 1500][np.count | 0] || 700;
     for (var i = start; i < state.notes.length; i++) {
       var n = state.notes[i];
-      if (n.glass) continue;
       if (n.start > t + 2.4) break;
       if (n.end < t - 0.05) continue;
       var k = state.keyMap[n.midi];
@@ -732,6 +731,17 @@
         mg.addColorStop(1, hexToRgba(p.color, 0));
         ctx.fillStyle = mg;
         ctx.beginPath(); ctx.arc(p.x, p.y, mrad, 0, Math.PI * 2); ctx.fill();
+        continue;
+      }
+      if (p.kind === 'wake') {
+        ctx.globalAlpha = a * 0.55;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = p.size * 0.7;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x + p.vx * 0.012, p.y + (p.len || 12) * a);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
         continue;
       }
       if (p.kind === 'drop') {
@@ -1145,6 +1155,7 @@
     var el = $('home');
     if (el) el.classList.add('hidden');
     applySidebar();
+    applyCollapse();
   }
 
   function showHome() {
@@ -1152,6 +1163,7 @@
     state.freePlay = false;
     state.freeBars.length = 0;
     state.home = true;
+    applyCollapse();
     var el = $('home');
     if (el) el.classList.remove('hidden');
     var fh = $('freeHint');
@@ -1323,6 +1335,15 @@
         color: color,
         grav: 980,
         soft: false
+      });
+    }
+    var wakes = Math.round(6 + 6 * power);
+    for (var wv = 0; wv < wakes; wv++) {
+      state.particles.push({
+        kind: 'wake', x: cx + (Math.random() - 0.5) * 26, y: cy - 2,
+        vx: (Math.random() - 0.5) * 26, vy: -150 - Math.random() * 210,
+        len: 10 + Math.random() * 18, life: 0, max: 0.4 + Math.random() * 0.4,
+        size: 1.6 + Math.random() * 1.6, color: color, grav: 520, soft: false
       });
     }
     for (var r = 0; r < 2; r++) {
@@ -1547,10 +1568,10 @@
       notePath(geo.x, top, geo.w, hgt, state.look.shape);
       ctx.fillStyle = hgt < 30 ? color : noteGradient(n, top, bottom);
       if (glowOn) {
-        ctx.shadowColor = GLOWS[gcol] || '#ffffff';
+        ctx.shadowColor = hexToRgba(GLOWS[gcol] || '#ffffff', 0.78);
         ctx.shadowBlur = state.lowQ ? 0 : [6, 10, 14, 20][Math.max(0, Math.min(3, state.look.glowLevel | 0))];
       } else if (!state.lowQ) {
-        ctx.shadowColor = color;
+        ctx.shadowColor = hexToRgba(color, 0.65);
         ctx.shadowBlur = 8;
       }
       ctx.fill();
@@ -1804,11 +1825,11 @@
     }
     if (line && line !== 'none' && GLOWS[line]) {
       var c = GLOWS[line];
-      var pw = state.look.linePower || 0, eh = 26 + pw * 26;
+      var pw = state.look.linePower || 0, eh = 40 + pw * 34;
       var eg = ctx.createLinearGradient(0, hitY - eh, 0, hitY + 2);
       eg.addColorStop(0, 'rgba(0,0,0,0)');
-      eg.addColorStop(0.55, hexToRgba(c, 0.10 + pw * 0.06));
-      eg.addColorStop(1, hexToRgba(c, 0.22 + pw * 0.10));
+      eg.addColorStop(0.55, hexToRgba(c, 0.09 + pw * 0.055));
+      eg.addColorStop(1, hexToRgba(c, 0.20 + pw * 0.09));
       ctx.fillStyle = eg; ctx.fillRect(0, hitY - eh, w, eh + 2);
       ctx.save();
       ctx.shadowColor = c;
@@ -2311,7 +2332,7 @@
   function applyCollapse() {
     var tb = $('topbar'), op = $('topOpen');
     if (tb) tb.classList.toggle('top-hidden', !!state.look.collapsed);
-    if (op) op.classList.toggle('show', !!state.look.collapsed);
+    if (op) op.classList.toggle('show', !!state.look.collapsed && !state.home);
   }
   var LIB_KEY = 'midiPiano.lib';
   var libKind = 'all';
