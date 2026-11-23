@@ -106,7 +106,7 @@
             tempos.push({ tick: tick, us: us });
           } else if (type === 0x59 && mlen === 2) {
             keySig = { sf: dv.getInt8(pos), mi: dv.getUint8(pos + 1) };
-            keyEvents.push({ tick: tick, sf: keySig.sf, mi: keySig.mi });
+            keyEvents.push({ tick: tick, sf: keySig.sf, mi: keySig.mi, tr: trackIndex });
           } else if (type === 0x58 && mlen >= 2) {
             timeSigs.push({
               tick: tick,
@@ -330,8 +330,13 @@
     var keys = [];
     (function () {
       var seen = {};
+      var refTrack = null;
+      for (var kr = 0; kr < keyEvents.length; kr++) {
+        if (keyEvents[kr].tick === 0 && (refTrack === null || keyEvents[kr].tr < refTrack)) refTrack = keyEvents[kr].tr;
+      }
       for (var ke = 0; ke < keyEvents.length; ke++) {
         var ev3 = keyEvents[ke];
+        if (refTrack !== null && ev3.tr !== refTrack) continue;
         var tm = tickToSec(ev3.tick);
         var kk = tm.toFixed(3) + '|' + ev3.sf + '|' + ev3.mi;
         if (seen[kk]) continue;

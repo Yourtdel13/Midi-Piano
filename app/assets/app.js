@@ -1549,7 +1549,8 @@
       var top = hitY - (n.end - t) * pps;
       var bottom = hitY - (n.start - t) * pps;
       var hgt = bottom - top;
-      if (hgt < 5) hgt = 5;
+      var minH = n.glass ? 9 : 5;
+      if (hgt < minH) hgt = minH;
       if (bottom < -10 || top > hitY) continue;
 
       var color = noteColor(n);
@@ -2004,7 +2005,7 @@
       for (var gi2 = 1; gi2 < steps; gi2++) {
         var f2 = gi2 / steps;
         var gst = gs + (ge - gs) * f2 * 0.92;
-        glissRun.push({ midi: hi + (lo - hi) * f2, start: gst, dur: 0.09, end: gst + 0.09,
+        glissRun.push({ midi: hi + (lo - hi) * f2, start: gst, dur: 0.16, end: gst + 0.16,
           velocity: 0.42, vol: 1, channel: 0, track: 0, hand: gn.hand, glass: true });
       }
     });
