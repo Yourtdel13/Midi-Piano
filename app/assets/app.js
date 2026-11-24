@@ -1865,7 +1865,7 @@
   // ---------------- 乐谱 ----------------
   var SCORE_COLORS = { white: '#ffffff', gold: '#ffcf5c', blue: '#7fb6ff', teal: '#5ce6d8', purple: '#b98bff',
     pink: '#ff8fc4', red: '#ff6b7a', green: '#5ee08a', orange: '#ff9a3d', rose: '#ff9fc0' };
-  var scoreBuf = null, scoreBufCtx = null, scoreBufAt = 0, scoreBufKey = '', scoreBufContent = -1;
+  var scoreBuf = null, scoreBufCtx = null, scoreBufAt = 0, scoreBufKey = '', scoreBufContent = -1, scoreGeo = null;
   function drawScoreOverlay(t) {
     if (!state.score || !state.look.score.on || !window.MusicXML) return;
     var s = state.look.score;
@@ -1878,25 +1878,41 @@
     if (scoreBuf.width !== Math.floor(vw * dpr2) || scoreBuf.height !== Math.floor(vh * dpr2)) {
       scoreBuf.width = Math.floor(vw * dpr2); scoreBuf.height = Math.floor(vh * dpr2); scoreBufKey = '';
     }
-    var key2 = [s.color, s.size, s.pos, s.glow, s.glowLevel, s.bgAlpha, vw, vh].join('|');
-    var now2 = performance.now();
-    var gap2 = state.lowQ ? 80 : (state.notes.length > 2500 ? 55 : 33);
     var st2 = scoreTimeAt(t);
-    if (typeof scoreBufContent !== 'number') scoreBufContent = -1;
-    var due2 = Math.abs(st2 - scoreBufContent) >= (state.lowQ ? 0.14 : (state.notes.length > 2500 ? 0.09 : 0.05));
-    if (key2 !== scoreBufKey || (due2 && now2 - scoreBufAt > gap2)) {
-      scoreBufContent = st2;
+    var bucket = 0;
+    if (state.score.measures) {
+      for (var bq = 0; bq < state.score.measures.length; bq++) {
+        if (state.score.measures[bq].start <= st2 + 0.001) bucket = bq; else break;
+      }
+    }
+    var playedN = 0;
+    for (var pq = 0; pq < state.score.notes.length; pq++) {
+      if (state.score.notes[pq].start <= st2) playedN++; else break;
+    }
+    var key2 = [s.color, s.size, s.pos, s.glow, s.glowLevel, s.bgAlpha, vw, vh, bucket, playedN].join('|');
+    if (key2 !== scoreBufKey) {
       scoreBufCtx.setTransform(dpr2, 0, 0, dpr2, 0, 0);
       scoreBufCtx.clearRect(0, 0, vw, vh);
-      MusicXML.drawScore(scoreBufCtx, state.score, {
+      scoreGeo = MusicXML.drawScore(scoreBufCtx, state.score, {
         x: 4, y: s.pos, w: vw - 8, h: 160 * s.size,
         color: SCORE_COLORS[s.color] || '#ffffff',
         glow: !!s.glow, glowBlur: [4, 10, 16, 24][s.glowLevel] || 10,
-        size: s.size, windowSec: 12, bgAlpha: s.bgAlpha == null ? 0.72 : s.bgAlpha
-      }, { time: scoreTimeAt(t) });
-      scoreBufAt = now2; scoreBufKey = key2;
+        size: s.size, windowSec: 12, bgAlpha: s.bgAlpha == null ? 0.72 : s.bgAlpha,
+        noCursor: true
+      }, { time: st2 });
+      scoreBufAt = performance.now(); scoreBufKey = key2;
     }
     ctx.drawImage(scoreBuf, 0, 0, vw, vh);
+    if (scoreGeo && scoreGeo.xOf) {
+      var cx = scoreGeo.xOf(st2), y0 = scoreGeo.top1 - 10, y1 = scoreGeo.top2 + (scoreGeo.gap * 4) + 8;
+      ctx.save();
+      ctx.strokeStyle = '#9fe8ff'; ctx.lineWidth = 2.6;
+      ctx.shadowColor = '#7fd8ff'; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.moveTo(cx, y0); ctx.lineTo(cx, y1); ctx.stroke();
+      ctx.shadowBlur = 0; ctx.fillStyle = '#bfefff';
+      ctx.beginPath(); ctx.moveTo(cx, y0 - 6); ctx.lineTo(cx - 5, y0 + 2); ctx.lineTo(cx + 5, y0 + 2); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
     return;
     MusicXML.drawScore(ctx, state.score, {
       x: 4, y: s.pos, w: window.innerWidth - 8, h: 160 * s.size,
