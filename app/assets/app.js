@@ -1881,7 +1881,11 @@
     var key2 = [s.color, s.size, s.pos, s.glow, s.glowLevel, s.bgAlpha, vw, vh].join('|');
     var now2 = performance.now();
     var gap2 = state.lowQ ? 80 : (state.notes.length > 2500 ? 55 : 33);
-    if (key2 !== scoreBufKey || now2 - scoreBufAt > gap2) {
+    var st2 = scoreTimeAt(t);
+    if (typeof scoreBufContent !== 'number') scoreBufContent = -1;
+    var due2 = Math.abs(st2 - scoreBufContent) >= (state.lowQ ? 0.14 : (state.notes.length > 2500 ? 0.09 : 0.05));
+    if (key2 !== scoreBufKey || (due2 && now2 - scoreBufAt > gap2)) {
+      scoreBufContent = st2;
       scoreBufCtx.setTransform(dpr2, 0, 0, dpr2, 0, 0);
       scoreBufCtx.clearRect(0, 0, vw, vh);
       MusicXML.drawScore(scoreBufCtx, state.score, {
