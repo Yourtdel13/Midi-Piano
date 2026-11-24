@@ -353,14 +353,14 @@
     var size = opts.size || 1;
     var gap = Math.max(4, 7 * size);
     var staffH = gap * 4;
-    var top1 = y0;
-    var top2 = y0 + staffH + gap * 3.2 + 16 * size;
+    var top1 = y0 + gap * 2.2;
+    var top2 = y0 + gap * 2.2 + staffH + gap * 3.2 + 16 * size;
     var leftPad = 30 * size, rightPad = 12 * size;
     var t = view.time;
 
     ctx.save();
     ctx.fillStyle = 'rgba(3,5,12,' + (opts.bgAlpha == null ? 0.72 : opts.bgAlpha) + ')';
-    ctx.fillRect(x0, y0 - gap * 2.6, w, (top2 + staffH) - y0 + gap * 3.4);
+    ctx.fillRect(x0, y0 - gap * 0.4, w, (top2 + staffH) - y0 + gap * 3.2);
     ctx.shadowColor = color; ctx.shadowBlur = 0;
 
     // 五线
@@ -400,7 +400,77 @@
       winEnd = winStart + opts.windowSec;
     }
     var plotW = w - leftPad - rightPad;
-    function xOf(tt) { return x0 + leftPad + (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW; }
+    // 弹簧式水平布局：每小节按最小宽度 + 可拉伸量分配
+    var sp = gap;
+    var vms = [];
+    for (var vmi = 0; vmi < ms.length; vmi++) {
+      var vm0 = ms[vmi];
+      if (vm0.end < winStart - 0.02 || vm0.start > winEnd + 0.02) continue;
+      vms.push(vm0);
+    }
+    var startsIn = {};
+    for (var vni = 0; vni < score.notes.length; vni++) {
+      var vn0 = score.notes[vni];
+      if (vn0.rest) continue;
+      for (var vj = 0; vj < vms.length; vj++) {
+        if (vn0.start >= vms[vj].start - 0.001 && vn0.start < vms[vj].end - 0.001) {
+          (startsIn[vj] = startsIn[vj] || []).push(vn0.start);
+          break;
+        }
+        if (vms[vj].start > vn0.start) break;
+      }
+    }
+    var vMin = [], vCnt = [], vRep = [];
+    for (var vk = 0; vk < vms.length; vk++) {
+      var cnt = startsIn[vk] ? startsIn[vk].length : 0;
+      vCnt.push(cnt);
+      var hasRep = false;
+      for (var vri = 0; vri < score.repeats.length; vri++) {
+        if (Math.abs(score.repeats[vri].at - vms[vk].start) < 0.05) { hasRep = true; break; }
+      }
+      vRep.push(hasRep);
+      vMin.push(sp * 2.4 + cnt * sp * 1.15 + (hasRep ? sp * 2.6 : 0));
+    }
+    var vTotal = 0; for (var vt = 0; vt < vMin.length; vt++) vTotal += vMin[vt];
+    var vScale = vTotal > 0 ? plotW / vTotal : 1;
+    if (vScale > 1) vScale = 1;
+    var vExtra = Math.max(0, plotW - vTotal);
+    var vExtraTotal = 0; for (var ve = 0; ve < vCnt.length; ve++) vExtraTotal += vCnt[ve];
+    var vPos = [], vCur = x0 + leftPad;
+    for (var vp = 0; vp < vms.length; vp++) {
+      var extraShare = vExtraTotal ? vExtra * (vCnt[vp] / vExtraTotal) : vExtra / Math.max(1, vms.length);
+      var mw = vMin[vp] * vScale + extraShare;
+      vPos.push({ x: vCur, w: mw, start: vms[vp].start, end: vms[vp].end });
+      vCur += mw;
+    }
+    // 小节内锚点：按起音时刻均匀铺开
+    var vAnchors = [];
+    for (var va = 0; va < vPos.length; va++) {
+      var arr = (startsIn[va] || []).slice();
+      arr.sort(function (a, b) { return a - b; });
+      var uniq = [];
+      for (var au = 0; au < arr.length; au++) if (!uniq.length || arr[au] - uniq[uniq.length - 1] > 0.002) uniq.push(arr[au]);
+      uniq.push(vPos[va].end);
+      vAnchors.push(uniq);
+    }
+    function xOf(tt) {
+      if (!vPos.length) return x0 + leftPad + (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW;
+      var idx = 0;
+      for (var xi = 0; xi < vPos.length; xi++) {
+        if (tt >= vPos[xi].start - 0.001) idx = xi; else break;
+      }
+      var vp2 = vPos[idx], an = vAnchors[idx];
+      var innerL = vp2.x + (vRep[idx] ? sp * 2.6 : sp * 1.2);
+      var innerR = vp2.x + vp2.w - sp * 1.2;
+      if (tt <= an[0]) return innerL;
+      for (var aj = 1; aj < an.length; aj++) {
+        if (tt <= an[aj] + 1e-6) {
+          var f = (tt - an[aj - 1]) / Math.max(0.001, an[aj] - an[aj - 1]);
+          return innerL + (innerR - innerL) * ((aj - 1 + f) / Math.max(1, an.length - 1));
+        }
+      }
+      return innerR;
+    }
 
     // 小节内的转调调号（按 MXL 的 <key> 变化）
     if (score.keys && score.keys.length) {
@@ -517,7 +587,7 @@
       if (!dr.sym && /^Fine$/i.test(dr.text || '')) { ctx.font = 'italic ' + (gap * 1.5) + 'px serif'; ctx.fillText('Fine', dx + 2, top1 - gap * 0.6); continue; }
       if (dr.sym === 'segno') { drawSegno(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Segno', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
       else if (dr.sym === 'coda') { drawCoda(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Coda', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
-      else ctx.fillText(dr.text, dx + 2, top1 - gap * 0.6);
+      else ctx.fillText(dr.text, dx + 2, top1 - gap * 1.7);
     }
 
     // 音符 / 休止 / 倚音
