@@ -622,12 +622,22 @@
       var dr = score.directions[d];
       if (!inWin(dr.time)) continue;
       var dx = xOf(dr.time);
+      // skyline：把文字放到这一段最高音符/符干之上
+      var skyTop = top1 - gap * 0.4;
+      for (var sk = 0; sk < score.notes.length; sk++) {
+        var sn = score.notes[sk];
+        if (sn.start > dr.time + 2.4) break;
+        if (sn.rest || sn.start < dr.time - 0.25) continue;
+        var sy = yOf(sn, gap);
+        if (sy < skyTop) skyTop = sy;
+      }
+      var ty = Math.max(top1 - gap * 3.2, skyTop - gap * 1.3);
       ctx.globalAlpha = 0.85; ctx.fillStyle = color;
       ctx.font = 'bold ' + (gap * 1.5) + 'px system-ui, sans-serif';
-      if (!dr.sym && /^Fine$/i.test(dr.text || '')) { ctx.font = 'italic ' + (gap * 1.5) + 'px serif'; ctx.fillText('Fine', dx + 2, top1 - gap * 2.6); continue; }
-      if (dr.sym === 'segno') { drawSegno(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Segno', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
-      else if (dr.sym === 'coda') { drawCoda(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Coda', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
-      else ctx.fillText(dr.text, dx + 2, top1 - gap * 2.6);
+      if (!dr.sym && /^Fine$/i.test(dr.text || '')) { ctx.font = 'italic ' + (gap * 1.5) + 'px serif'; ctx.fillText('Fine', dx + 2, ty); continue; }
+      if (dr.sym === 'segno') { drawSegno(ctx, dx, ty, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Segno', dx + gap * 1.8, ty + gap * 0.4); }
+      else if (dr.sym === 'coda') { drawCoda(ctx, dx, ty, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Coda', dx + gap * 1.8, ty + gap * 0.4); }
+      else ctx.fillText(dr.text, dx + 2, ty);
     }
 
     // 音符 / 休止 / 倚音
