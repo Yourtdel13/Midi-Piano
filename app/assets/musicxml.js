@@ -484,7 +484,7 @@
       }
       return iR9;
     }
-    var scrollOff = (x0 + leftPad + plotW * 0.82) - rawX(view.time || 0);
+    var scrollOff = (x0 + leftPad + plotW * 0.6) - rawX(view.time || 0);
     function xOf(tt) { return rawX(tt) + scrollOff; }
     function xOfOld(tt) {
       if (!lPos.length) return x0 + leftPad + (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW;
