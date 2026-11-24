@@ -1016,7 +1016,8 @@
       ctx.shadowBlur = 0;
     }
 
-    // 播放竖杆（加粗 + 发光 + 顶部箭头）
+    // 播放竖杆（加粗 + 发光 + 顶部箭头）—— 可关闭，由外部单独绘制
+    if (!opts.noCursor) {
     ctx.shadowBlur = 0;
     var px = xOf(t);
     var pg = ctx.createLinearGradient(px - 2, 0, px + 2, 0);
@@ -1035,6 +1036,7 @@
     ctx.beginPath();
     ctx.moveTo(px, top1 - 12); ctx.lineTo(px - 5, top1 - 4); ctx.lineTo(px + 5, top1 - 4);
     ctx.closePath(); ctx.fill();
+    }
 
     ctx.restore();
     return { top1: top1, top2: top2, gap: gap, xOf: xOf };
