@@ -251,6 +251,7 @@
     title = (work && work.textContent.trim()) || (move && move.textContent.trim()) || '';
     return {
       keys: (function () {
+        try {
         var kk = [];
         for (var ki2 = 0; ki2 < keys.length; ki2++) {
           var ko = keys[ki2];
@@ -260,6 +261,7 @@
           kk.push({ time: kt, fifths: ko.fifths, mode: ko.mode });
         }
         return kk;
+        } catch (kerr) { return []; }
       })(),
       notes: notes, measures: measures, repeats: repeats, endings: endings, directions: directions, ottavas: ottavas, wedges: wedges, dynamics: dynamics,
       title: title, beats: beats, beatType: beatType, keyFifths: keyFifths, keyMode: keyMode, clefs: clefs,
@@ -628,7 +630,7 @@
         var sn = score.notes[sk];
         if (sn.start > dr.time + 2.4) break;
         if (sn.rest || sn.start < dr.time - 0.25) continue;
-        var sy = yOf(sn, gap);
+        var sy = top1; try { sy = yOf(sn); } catch (e2) { sy = top1; }
         if (sy < skyTop) skyTop = sy;
       }
       var ty = Math.max(top1 - gap * 3.2, skyTop - gap * 1.3);
