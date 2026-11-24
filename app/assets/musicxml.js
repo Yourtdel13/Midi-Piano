@@ -353,8 +353,8 @@
     var size = opts.size || 1;
     var gap = Math.max(4, 7 * size);
     var staffH = gap * 4;
-    var top1 = y0 + gap * 2.2;
-    var top2 = y0 + gap * 2.2 + staffH + gap * 3.2 + 16 * size;
+    var top1 = y0 + gap * 3.4;
+    var top2 = y0 + gap * 3.4 + staffH + gap * 3.2 + 16 * size;
     var leftPad = 30 * size, rightPad = 12 * size;
     var t = view.time;
 
@@ -591,10 +591,10 @@
       var dx = xOf(dr.time);
       ctx.globalAlpha = 0.85; ctx.fillStyle = color;
       ctx.font = 'bold ' + (gap * 1.5) + 'px system-ui, sans-serif';
-      if (!dr.sym && /^Fine$/i.test(dr.text || '')) { ctx.font = 'italic ' + (gap * 1.5) + 'px serif'; ctx.fillText('Fine', dx + 2, top1 - gap * 0.6); continue; }
+      if (!dr.sym && /^Fine$/i.test(dr.text || '')) { ctx.font = 'italic ' + (gap * 1.5) + 'px serif'; ctx.fillText('Fine', dx + 2, top1 - gap * 2.6); continue; }
       if (dr.sym === 'segno') { drawSegno(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Segno', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
       else if (dr.sym === 'coda') { drawCoda(ctx, dx, top1 - gap * 0.9, gap * 1.2, color); ctx.font = 'bold ' + (gap * 1.1) + 'px system-ui, sans-serif'; ctx.fillText('Coda', dx + gap * 1.8, top1 - gap * 0.9 + gap * 0.4); }
-      else ctx.fillText(dr.text, dx + 2, top1 - gap * 1.7);
+      else ctx.fillText(dr.text, dx + 2, top1 - gap * 2.6);
     }
 
     // 音符 / 休止 / 倚音

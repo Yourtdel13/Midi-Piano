@@ -2070,8 +2070,21 @@
     if (!sc.notes.length) throw new Error('没有解析到音符');
     var perf = buildScorePerformance(sc);
     if (perf && perf.notes.length) {
+      var kList = [];
+      if (sc.keys && sc.keys.length) {
+        var kSorted = sc.keys.slice().sort(function (a, b) { return a.time - b.time; });
+        for (var kq = 0; kq < kSorted.length; kq++) {
+          var kkq = kSorted[kq];
+          if (kList.length && kkq.time - kList[kList.length - 1].time < 5) continue;
+          var ksnap = kkq.time;
+          if (sc.measures) for (var kmi2 = 0; kmi2 < sc.measures.length; kmi2++) {
+            if (sc.measures[kmi2].start <= kkq.time + 0.12) ksnap = sc.measures[kmi2].start; else break;
+          }
+          kList.push({ time: ksnap, fifths: kkq.fifths, mode: kkq.mode });
+        }
+      }
       var parsed = { notes: perf.notes, duration: perf.duration, name: sc.title || '乐谱', trackCount: 1, pedals: [], bars: [],
-        key: { label: keyNameOf(sc), source: 'meta' }, keys: sc.keys };
+        key: { label: keyNameOf(sc), source: 'meta' }, keys: kList };
       state.score = sc;
       state.scoreSegments = perf.segments;
       loadParsed(parsed, sc.title || file.name);
