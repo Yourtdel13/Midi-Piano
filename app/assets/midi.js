@@ -251,19 +251,6 @@
       else bridged.push({ start: b0.start, end: b0.end });
     }
     mergedPedals = bridged;
-    var allPedals = [];
-    for (var pch in pedalIntervals) allPedals = allPedals.concat(pedalIntervals[pch]);
-    allPedals.sort(function (a, b) { return a.start - b.start; });
-    var mergedPedals = [];
-    for (var mp = 0; mp < allPedals.length; mp++) {
-      var curP = allPedals[mp];
-      var lastP = mergedPedals[mergedPedals.length - 1];
-      if (lastP && curP.start <= lastP.end + 0.02) {
-        lastP.end = Math.max(lastP.end, curP.end);
-      } else {
-        mergedPedals.push({ start: curP.start, end: curP.end });
-      }
-    }
 
     for (var pn = 0; pn < notes.length; pn++) {
       var nn = notes[pn];

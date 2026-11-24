@@ -21,7 +21,7 @@
     look: { bgBlur: 0, perfAuto: false, shape: 'capsule', fx: 'splash', gradient: 'random', pedal: true, topbar: true,
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
       leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true, collapsed: false,
-      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' },
+      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60,
       score: { on: true, glow: true, color: 'white', pos: 12, size: 1, glowLevel: 1, bgAlpha: 0.72 } },
     freePlay: false, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
@@ -1017,6 +1017,12 @@
     for (var p = 0; p < peds.length; p++) peds[p].classList.toggle('active', (peds[p].getAttribute('data-pedal') === 'on') === !!state.look.pedal);
     var ambs = document.querySelectorAll('#ambOpts .opt');
     for (var a = 0; a < ambs.length; a++) ambs[a].classList.toggle('active', ambs[a].getAttribute('data-amb') === state.look.amb);
+    var pmi = $('pedalMix');
+    if (pmi) pmi.addEventListener('input', function () {
+      state.look.pedalMix = Math.max(0, Math.min(100, +pmi.value || 0));
+      var v = $('pedalMixVal'); if (v) v.textContent = state.look.pedalMix + '%';
+      saveLook();
+    });
     var npcs = $('npCount');
     if (npcs) npcs.addEventListener('input', function () {
       state.look.np.count = Math.max(0, Math.min(3, +npcs.value || 0));
@@ -1065,6 +1071,8 @@
     if (gvl) gvl.value = String(state.look.glowLevel | 0);
     var gvv = $('glowLevelVal');
     if (gvv) gvv.textContent = ['Low', 'Medium', 'High', 'Max'][Math.max(0, Math.min(3, state.look.glowLevel | 0))];
+    var pmm = $('pedalMix'); if (pmm) pmm.value = String(state.look.pedalMix | 0);
+    var pmv = $('pedalMixVal'); if (pmv) pmv.textContent = (state.look.pedalMix | 0) + '%';
     var npo = document.querySelectorAll('#npOnOpts .opt');
     for (var no = 0; no < npo.length; no++) npo[no].classList.toggle('active', (npo[no].getAttribute('data-np') === 'on') === !!state.look.np.on);
     var npr = document.querySelectorAll('#npRegionOpts .opt');
@@ -2130,7 +2138,7 @@
       state.pedalOn = pedalNow;
       updatePedalChip();
       if (audio.wet) {
-        audio.wet.gain.setTargetAtTime(pedalNow ? 0.55 : 0.12, audio.ctx.currentTime, 0.10);
+        audio.wet.gain.setTargetAtTime(pedalNow ? (0.10 + state.look.pedalMix / 100 * 0.55) : 0.12, audio.ctx.currentTime, 0.10);
       }
     }
     if (state.playing) {
@@ -2272,7 +2280,7 @@
     if (state.look.pedal) {
       for (var ni = 0; ni < state.notes.length; ni++) {
         var nn = state.notes[ni];
-        nn.soundEnd = Math.max(nn.soundEnd || nn.end, nn.end + 0.85);
+        nn.soundEnd = Math.max(nn.soundEnd || nn.end, nn.end + 0.05 + (state.look.pedalMix / 100) * 1.15);
       }
     }
     updatePedalChip();
