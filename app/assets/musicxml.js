@@ -728,6 +728,13 @@
       }
       var yTop = Infinity, yBot = -Infinity;
       for (var ak = 0; ak < arr.length; ak++) { yTop = Math.min(yTop, arr[ak].y); yBot = Math.max(yBot, arr[ak].y); }
+      // skyline 碰撞：符杠不能顶进上一谱表/文字区，必要时翻转符干
+      var stf = arr[0].n.staff;
+      var candUp = upDir ? yTop - gap * 3.2 : yBot + gap * 3.2;
+      var staffTop = stf === 2 ? top2 : top1;
+      var staffBot = staffTop + staffH;
+      if (upDir && candUp < staffTop - gap * 2.4) { upDir = false; }
+      else if (!upDir && candUp > staffBot + gap * 2.4) { upDir = true; }
       for (var af = 0; af < arr.length; af++) if (Math.abs(arr[af].y - yBot) < 0.01) { arr[af]._artDraw = true; break; }
       var sharedY = upDir ? yTop - gap * 3.2 : yBot + gap * 3.2;
       for (var ak = 0; ak < arr.length; ak++) {
