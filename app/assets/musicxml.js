@@ -484,12 +484,11 @@
       }
       return iR9;
     }
-    var firstStart = lPos.length ? lPos[0].start : 0;
-    for (var fni = 0; fni < score.notes.length; fni++) {
-      if (!score.notes[fni].rest) { firstStart = score.notes[fni].start; break; }
-    }
-    var scrollOff = Math.min((x0 + leftPad) - rawX(firstStart), (x0 + leftPad + plotW * 0.42) - rawX(view.time || 0));
-    function xOf(tt) { return rawX(tt) + scrollOff; }
+    // 回退：按时间窗口铺满面板（不横向滚动，避免左侧留白）
+    var winRawL = rawX(winStart), winRawR = rawX(winEnd);
+    var winRawW = Math.max(1, winRawR - winRawL);
+    var fitScale = plotW / winRawW;
+    function xOf(tt) { return x0 + leftPad + (rawX(tt) - winRawL) * fitScale; }
     function xOfOld(tt) {
       if (!lPos.length) return x0 + leftPad + (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW;
       var lo1 = 0, hi1 = lPos.length - 1, idx1 = 0;
