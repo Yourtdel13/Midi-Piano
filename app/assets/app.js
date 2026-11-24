@@ -1865,7 +1865,7 @@
   // ---------------- 乐谱 ----------------
   var SCORE_COLORS = { white: '#ffffff', gold: '#ffcf5c', blue: '#7fb6ff', teal: '#5ce6d8', purple: '#b98bff',
     pink: '#ff8fc4', red: '#ff6b7a', green: '#5ee08a', orange: '#ff9a3d', rose: '#ff9fc0' };
-  var scoreBuf = null, scoreBufCtx = null, scoreBufAt = 0, scoreBufKey = '';
+  var scoreBuf = null, scoreBufCtx = null, scoreBufAt = 0, scoreBufKey = '', scoreBufContent = -1;
   function drawScoreOverlay(t) {
     if (!state.score || !state.look.score.on || !window.MusicXML) return;
     var s = state.look.score;
