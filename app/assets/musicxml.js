@@ -409,16 +409,21 @@
       vms.push(vm0);
     }
     var startsIn = {};
-    for (var vni = 0; vni < score.notes.length; vni++) {
+    var nLo = 0, nHi = score.notes.length - 1;
+    while (nLo < nHi) {
+      var nMid = (nLo + nHi) >> 1;
+      if (score.notes[nMid].start < winStart) nLo = nMid + 1; else nHi = nMid;
+    }
+    for (var vni = nLo; vni < score.notes.length; vni++) {
       var vn0 = score.notes[vni];
+      if (vn0.start > winEnd) break;
       if (vn0.rest) continue;
-      for (var vj = 0; vj < vms.length; vj++) {
-        if (vn0.start >= vms[vj].start - 0.001 && vn0.start < vms[vj].end - 0.001) {
-          (startsIn[vj] = startsIn[vj] || []).push(vn0.start);
-          break;
-        }
-        if (vms[vj].start > vn0.start) break;
+      var a0 = 0, a1 = vms.length - 1, ai = -1;
+      while (a0 <= a1) {
+        var am = (a0 + a1) >> 1;
+        if (vms[am].start <= vn0.start + 0.001) { ai = am; a0 = am + 1; } else a1 = am - 1;
       }
+      if (ai >= 0 && vn0.start < vms[ai].end - 0.001) (startsIn[ai] = startsIn[ai] || []).push(vn0.start);
     }
     var vMin = [], vCnt = [], vRep = [];
     for (var vk = 0; vk < vms.length; vk++) {
@@ -556,8 +561,10 @@
     // 渐强 / 渐弱（发夹记号，按时间拉伸）
     for (var wi = 0; wi < (score.wedges || []).length; wi++) {
       var wg = score.wedges[wi];
-      var wx1 = xOf(wg.start), wx2 = Math.max(wx1 + gap * 2.2, xOf(wg.end));
-      if (wx2 < -20 || wx1 > w + 20) continue;
+      if (wg.end <= winStart + 0.01 || wg.start >= winEnd - 0.01) continue;
+      var ws0 = Math.max(wg.start, winStart), ws1 = Math.min(wg.end, winEnd);
+      if (ws1 <= ws0) continue;
+      var wx1 = xOf(ws0), wx2 = Math.max(wx1 + gap * 1.2, xOf(ws1));
       var wy = (top1 + staffH + top2) / 2 + gap * 0.2, wh = gap * 0.55;
       ctx.save(); ctx.globalAlpha = 0.85; ctx.strokeStyle = color; ctx.lineWidth = Math.max(1, size * 0.9);
       ctx.beginPath();

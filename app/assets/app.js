@@ -1880,7 +1880,7 @@
     }
     var key2 = [s.color, s.size, s.pos, s.glow, s.glowLevel, s.bgAlpha, vw, vh].join('|');
     var now2 = performance.now();
-    var gap2 = state.lowQ ? 66 : 33;
+    var gap2 = state.lowQ ? 80 : (state.notes.length > 2500 ? 55 : 33);
     if (key2 !== scoreBufKey || now2 - scoreBufAt > gap2) {
       scoreBufCtx.setTransform(dpr2, 0, 0, dpr2, 0, 0);
       scoreBufCtx.clearRect(0, 0, vw, vh);
