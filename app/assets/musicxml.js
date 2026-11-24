@@ -48,7 +48,7 @@
           if (dEl) divisions = Math.max(1, parseInt(dEl.textContent, 10) || 1);
           var kEl = el.getElementsByTagName('key')[0];
           if (kEl) { keyFifths = parseInt(txt(kEl, 'fifths') || '0', 10) || 0; keyMode = txt(kEl, 'mode') || 'major'; }
-            if (kEl) { var qf = keyFifths, qm = keyMode, qlast = keys[keys.length-1]; if (!qlast || qlast.fifths !== qf || qlast.mode !== qm) keys.push({ time: secAt(mStart), fifths: qf, mode: qm }); }
+            if (kEl) { var qf = keyFifths, qm = keyMode, qlast = keys[keys.length-1]; if (!qlast || qlast.fifths !== qf || qlast.mode !== qm) keys.push({ measure: mi, time: secAt(mStart), fifths: qf, mode: qm }); }
           var tEl = el.getElementsByTagName('time')[0];
           if (tEl) { beats = parseInt(txt(tEl, 'beats') || '4', 10) || 4; beatType = parseInt(txt(tEl, 'beat-type') || '4', 10) || 4; }
           var clEls = el.getElementsByTagName('clef');
@@ -250,8 +250,19 @@
     var move = doc.getElementsByTagName('movement-title')[0];
     title = (work && work.textContent.trim()) || (move && move.textContent.trim()) || '';
     return {
+      keys: (function () {
+        var kk = [];
+        for (var ki2 = 0; ki2 < keys.length; ki2++) {
+          var ko = keys[ki2];
+          var kt = (ko.measure != null && measures[ko.measure]) ? measures[ko.measure].start : ko.time;
+          var kprev = kk[kk.length - 1];
+          if (kprev && (Math.abs(kprev.time - kt) < 0.01 || kprev.fifths === ko.fifths && kprev.mode === ko.mode)) continue;
+          kk.push({ time: kt, fifths: ko.fifths, mode: ko.mode });
+        }
+        return kk;
+      })(),
       notes: notes, measures: measures, repeats: repeats, endings: endings, directions: directions, ottavas: ottavas, wedges: wedges, dynamics: dynamics,
-      title: title, beats: beats, beatType: beatType, keyFifths: keyFifths, keyMode: keyMode, clefs: clefs, keys: keys,
+      title: title, beats: beats, beatType: beatType, keyFifths: keyFifths, keyMode: keyMode, clefs: clefs,
       duration: measures.length ? measures[measures.length - 1].end : 0
     };
   }
