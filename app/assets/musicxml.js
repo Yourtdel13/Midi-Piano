@@ -411,78 +411,76 @@
       winEnd = winStart + opts.windowSec;
     }
     var plotW = w - leftPad - rightPad;
-    // 弹簧式水平布局：每小节按最小宽度 + 可拉伸量分配
+    // 弹簧式水平布局（全谱一次算好并缓存，滚动时不重排）
     var sp = gap;
-    var vms = [];
-    for (var vmi = 0; vmi < ms.length; vmi++) {
-      var vm0 = ms[vmi];
-      if (vm0.end < winStart - 0.02 || vm0.start > winEnd + 0.02) continue;
-      vms.push(vm0);
-    }
-    var startsIn = {};
-    var nLo = 0, nHi = score.notes.length - 1;
-    while (nLo < nHi) {
-      var nMid = (nLo + nHi) >> 1;
-      if (score.notes[nMid].start < winStart) nLo = nMid + 1; else nHi = nMid;
-    }
-    for (var vni = nLo; vni < score.notes.length; vni++) {
-      var vn0 = score.notes[vni];
-      if (vn0.start > winEnd) break;
-      if (vn0.rest) continue;
-      var a0 = 0, a1 = vms.length - 1, ai = -1;
-      while (a0 <= a1) {
-        var am = (a0 + a1) >> 1;
-        if (vms[am].start <= vn0.start + 0.001) { ai = am; a0 = am + 1; } else a1 = am - 1;
+    var layKey = w + '|' + size + '|' + ms.length;
+    var L = score._lay;
+    if (!L || L.key !== layKey) {
+      var nCnt = [], zi;
+      for (zi = 0; zi < ms.length; zi++) nCnt.push(0);
+      for (zi = 0; zi < score.notes.length; zi++) {
+        var nn0 = score.notes[zi];
+        if (nn0.rest) continue;
+        var lo0 = 0, hi0 = ms.length - 1, ix0 = -1;
+        while (lo0 <= hi0) {
+          var mid0 = (lo0 + hi0) >> 1;
+          if (ms[mid0].start <= nn0.start + 0.001) { ix0 = mid0; lo0 = mid0 + 1; } else hi0 = mid0 - 1;
+        }
+        if (ix0 >= 0 && nn0.start < ms[ix0].end - 0.001) nCnt[ix0]++;
       }
-      if (ai >= 0 && vn0.start < vms[ai].end - 0.001) (startsIn[ai] = startsIn[ai] || []).push(vn0.start);
-    }
-    var vMin = [], vCnt = [], vRep = [];
-    for (var vk = 0; vk < vms.length; vk++) {
-      var cnt = startsIn[vk] ? startsIn[vk].length : 0;
-      vCnt.push(cnt);
-      var hasRep = false;
-      for (var vri = 0; vri < score.repeats.length; vri++) {
-        if (Math.abs(score.repeats[vri].at - vms[vk].start) < 0.05) { hasRep = true; break; }
+      var vMin = [], vRep = [], vk0;
+      for (vk0 = 0; vk0 < ms.length; vk0++) {
+        var rep0 = false;
+        for (var vr0 = 0; vr0 < score.repeats.length; vr0++) {
+          if (Math.abs(score.repeats[vr0].at - ms[vk0].start) < 0.05) { rep0 = true; break; }
+        }
+        vRep.push(rep0);
+        vMin.push(sp * 2.4 + nCnt[vk0] * sp * 1.15 + (rep0 ? sp * 2.6 : 0));
       }
-      vRep.push(hasRep);
-      vMin.push(sp * 2.4 + cnt * sp * 1.15 + (hasRep ? sp * 2.6 : 0));
+      var vTot = 0;
+      for (var vt0 = 0; vt0 < vMin.length; vt0++) vTot += vMin[vt0];
+      var vScl = vTot > 0 ? Math.min(1, plotW / vTot) : 1;
+      var vEx = Math.max(0, plotW - vTot);
+      var vET = 0;
+      for (var ve0 = 0; ve0 < nCnt.length; ve0++) vET += nCnt[ve0];
+      var vPos = [], vCur = x0 + leftPad;
+      for (var vp0 = 0; vp0 < ms.length; vp0++) {
+        var share0 = vET ? vEx * (nCnt[vp0] / vET) : vEx / Math.max(1, ms.length);
+        var mw0 = vMin[vp0] * vScl + share0;
+        vPos.push({ x: vCur, w: mw0, start: ms[vp0].start, end: ms[vp0].end });
+        vCur += mw0;
+      }
+      var vAnch = [];
+      for (var va0 = 0; va0 < vPos.length; va0++) {
+        var arr0 = [];
+        for (var na0 = 0; na0 < score.notes.length; na0++) {
+          var nn1 = score.notes[na0];
+          if (nn1.rest) continue;
+          if (nn1.start >= vPos[va0].end) break;
+          if (nn1.start >= vPos[va0].start - 0.001) arr0.push(nn1.start);
+        }
+        arr0.push(vPos[va0].end);
+        vAnch.push(arr0);
+      }
+      L = score._lay = { key: layKey, pos: vPos, anchors: vAnch, rep: vRep };
     }
-    var vTotal = 0; for (var vt = 0; vt < vMin.length; vt++) vTotal += vMin[vt];
-    var vScale = vTotal > 0 ? plotW / vTotal : 1;
-    if (vScale > 1) vScale = 1;
-    var vExtra = Math.max(0, plotW - vTotal);
-    var vExtraTotal = 0; for (var ve = 0; ve < vCnt.length; ve++) vExtraTotal += vCnt[ve];
-    var vPos = [], vCur = x0 + leftPad;
-    for (var vp = 0; vp < vms.length; vp++) {
-      var extraShare = vExtraTotal ? vExtra * (vCnt[vp] / vExtraTotal) : vExtra / Math.max(1, vms.length);
-      var mw = vMin[vp] * vScale + extraShare;
-      vPos.push({ x: vCur, w: mw, start: vms[vp].start, end: vms[vp].end });
-      vCur += mw;
-    }
-    // 小节内锚点：按起音时刻均匀铺开
-    var vAnchors = [];
-    for (var va = 0; va < vPos.length; va++) {
-      var arr = (startsIn[va] || []).slice();
-      arr.sort(function (a, b) { return a - b; });
-      var uniq = [];
-      for (var au = 0; au < arr.length; au++) if (!uniq.length || arr[au] - uniq[uniq.length - 1] > 0.002) uniq.push(arr[au]);
-      uniq.push(vPos[va].end);
-      vAnchors.push(uniq);
-    }
+    var lPos = L.pos, lAnch = L.anchors, lRep = L.rep;
     function xOf(tt) {
-      if (!vPos.length) return x0 + leftPad + (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW;
-      var idx = 0;
-      for (var xi = 0; xi < vPos.length; xi++) {
-        if (tt >= vPos[xi].start - 0.001) idx = xi; else break;
+      if (!lPos.length) return x0 + leftPad + (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW;
+      var lo1 = 0, hi1 = lPos.length - 1, idx1 = 0;
+      while (lo1 <= hi1) {
+        var mi1 = (lo1 + hi1) >> 1;
+        if (lPos[mi1].start <= tt + 0.001) { idx1 = mi1; lo1 = mi1 + 1; } else hi1 = mi1 - 1;
       }
-      var vp2 = vPos[idx], an = vAnchors[idx];
-      var innerL = vp2.x + (vRep[idx] ? sp * 2.6 : sp * 1.2);
-      var innerR = vp2.x + vp2.w - sp * 1.2;
-      if (tt <= an[0]) return innerL;
-      for (var aj = 1; aj < an.length; aj++) {
-        if (tt <= an[aj] + 1e-6) {
-          var f = (tt - an[aj - 1]) / Math.max(0.001, an[aj] - an[aj - 1]);
-          return innerL + (innerR - innerL) * ((aj - 1 + f) / Math.max(1, an.length - 1));
+      var vp1 = lPos[idx1], an1 = lAnch[idx1];
+      var innerL = vp1.x + (lRep[idx1] ? sp * 2.6 : sp * 1.2);
+      var innerR = vp1.x + vp1.w - sp * 1.2;
+      if (!an1.length) return innerL;
+      if (tt <= an1[0]) return innerL;
+      for (var aj1 = 1; aj1 < an1.length; aj1++) {
+        if (tt <= an1[aj1] + 1e-6) {
+          var f1 = (tt - an1[aj1 - 1]) / Math.max(0.001, an1[aj1] - an1[aj1 - 1]);
+          return innerL + (innerR - innerL) * ((aj1 - 1 + f1) / Math.max(1, an1.length - 1));
         }
       }
       return innerR;
