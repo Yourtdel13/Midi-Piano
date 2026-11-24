@@ -1569,11 +1569,11 @@
       notePath(geo.x, top, geo.w, hgt, state.look.shape);
       ctx.fillStyle = hgt < 30 ? color : noteGradient(n, top, bottom);
       if (glowOn) {
-        ctx.shadowColor = hexToRgba(GLOWS[gcol] || '#ffffff', 0.78);
+        ctx.shadowColor = hexToRgba(GLOWS[gcol] || '#ffffff', 0.9);
         ctx.shadowBlur = state.lowQ ? 0 : [6, 10, 14, 20][Math.max(0, Math.min(3, state.look.glowLevel | 0))];
       } else if (!state.lowQ) {
-        ctx.shadowColor = hexToRgba(color, 0.65);
-        ctx.shadowBlur = 8;
+        ctx.shadowColor = hexToRgba(color, 0.82);
+        ctx.shadowBlur = 14;
       }
       ctx.fill();
       ctx.shadowBlur = 0;
@@ -2125,7 +2125,7 @@
     }
     updateAmbience(dt);
     updateFreeBars(dt);
-    var pedalNow = !!(state.look.pedal && pedalAt(t));
+    var pedalNow = !!state.look.pedal;
     if (pedalNow !== state.pedalOn) {
       state.pedalOn = pedalNow;
       updatePedalChip();
@@ -2269,7 +2269,7 @@
       keyEl.textContent = state.keyLabel ? (state.keyLabel + (estimated ? ' · 推测' : '')) : '调式未知';
       keyEl.classList.toggle('dim', !state.keyLabel);
     }
-    if (state.look.pedal && !state.pedals.length) {
+    if (state.look.pedal) {
       for (var ni = 0; ni < state.notes.length; ni++) {
         var nn = state.notes[ni];
         nn.soundEnd = Math.max(nn.soundEnd || nn.end, nn.end + 0.85);
