@@ -485,6 +485,9 @@
       return iR9;
     }
     var firstStart = lPos.length ? lPos[0].start : 0;
+    for (var fni = 0; fni < score.notes.length; fni++) {
+      if (!score.notes[fni].rest) { firstStart = score.notes[fni].start; break; }
+    }
     var scrollOff = Math.min((x0 + leftPad) - rawX(firstStart), (x0 + leftPad + plotW * 0.6) - rawX(view.time || 0));
     function xOf(tt) { return rawX(tt) + scrollOff; }
     function xOfOld(tt) {
