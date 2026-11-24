@@ -223,9 +223,13 @@
     for (var no2 = 0; no2 < notes.length; no2++) {
       var nn2 = notes[no2];
       nn2.ottava = 0;
+      nn2.drawOct = 0;
       for (var oo2 = 0; oo2 < ottavas.length; oo2++) {
         var ov2 = ottavas[oo2];
-        if (false) nn2.ottava = 0; // 音频保持 MXL 原样，不再额外移八度
+        if (nn2.rest) continue;
+        if (nn2.staff !== ov2.staff) continue;
+        if (nn2.start < ov2.start - 0.05 || nn2.start > ov2.end) continue;
+        nn2.drawOct += (ov2.dir === 'down' ? 7 : -7);
       }
     }
 
@@ -439,7 +443,7 @@
     }
     function yOf(n) {
       var top = n.staff === 2 ? top2 : top1;
-      return top + staffH - (n.diatonic - bottomRef(n.staff, n.start)) * (gap / 2);
+      return top + staffH - ((n.diatonic + (n.drawOct || 0)) - bottomRef(n.staff, n.start)) * (gap / 2);
     }
     function inWin(tt) { return tt >= winStart - 0.15 && tt <= winEnd; }
 

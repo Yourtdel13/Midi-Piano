@@ -22,7 +22,7 @@
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
       leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true, collapsed: false,
       glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60,
-      score: { on: true, glow: true, color: 'white', pos: 12, size: 1, glowLevel: 1, bgAlpha: 0.72 } },
+      score: { on: true, glow: true, color: 'white', pos: 20, size: 0.9, glowLevel: 1, bgAlpha: 0.72 } },
     freePlay: false, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
     fps: 0, fpsAcc: 0, fpsFrames: 0, dbgAcc: 0,
@@ -1576,7 +1576,8 @@
       var glowOn = !!gcol && gcol !== 'none';
       notePath(geo.x, top, geo.w, hgt, state.look.shape);
       ctx.fillStyle = hgt < 30 ? color : noteGradient(n, top, bottom);
-      if (glowOn) {
+      var heavy = state.notes.length > 2200 && !active;
+      if (glowOn && !heavy) {
         ctx.shadowColor = hexToRgba(GLOWS[gcol] || '#ffffff', 0.9);
         ctx.shadowBlur = state.lowQ ? 0 : [6, 10, 14, 20][Math.max(0, Math.min(3, state.look.glowLevel | 0))];
       } else if (!state.lowQ) {

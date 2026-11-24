@@ -319,13 +319,15 @@
     var keys = [];
     (function () {
       var seen = {};
-      var refTrack = null;
+      var refTrack = null, refCount = 0;
       for (var kr = 0; kr < keyEvents.length; kr++) {
         if (keyEvents[kr].tick === 0 && (refTrack === null || keyEvents[kr].tr < refTrack)) refTrack = keyEvents[kr].tr;
       }
+      if (refTrack !== null) for (var kc = 0; kc < keyEvents.length; kc++) if (keyEvents[kc].tr === refTrack) refCount++;
+      var useAll = refCount >= 2;
       for (var ke = 0; ke < keyEvents.length; ke++) {
         var ev3 = keyEvents[ke];
-        if (refTrack !== null && ev3.tr !== refTrack) continue;
+        if (!useAll && refTrack !== null && ev3.tr !== refTrack) continue;
         var tm = tickToSec(ev3.tick);
         var kk = tm.toFixed(3) + '|' + ev3.sf + '|' + ev3.mi;
         if (seen[kk]) continue;
