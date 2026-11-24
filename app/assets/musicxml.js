@@ -439,8 +439,8 @@
       }
       var vTot = 0;
       for (var vt0 = 0; vt0 < vMin.length; vt0++) vTot += vMin[vt0];
-      var vScl = vTot > 0 ? Math.min(1, plotW / vTot) : 1;
-      var vEx = Math.max(0, plotW - vTot);
+      var vScl = 1;
+      var vEx = 0;
       var vET = 0;
       for (var ve0 = 0; ve0 < nCnt.length; ve0++) vET += nCnt[ve0];
       var vPos = [], vCur = x0 + leftPad;
@@ -465,7 +465,28 @@
       L = score._lay = { key: layKey, pos: vPos, anchors: vAnch, rep: vRep };
     }
     var lPos = L.pos, lAnch = L.anchors, lRep = L.rep;
-    function xOf(tt) {
+    function rawX(tt) {
+      if (!lPos.length) return (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW;
+      var lo9 = 0, hi9 = lPos.length - 1, ix9 = 0;
+      while (lo9 <= hi9) {
+        var mi9 = (lo9 + hi9) >> 1;
+        if (lPos[mi9].start <= tt + 0.001) { ix9 = mi9; lo9 = mi9 + 1; } else hi9 = mi9 - 1;
+      }
+      var vp9 = lPos[ix9], an9 = lAnch[ix9];
+      var iL9 = vp9.x + (lRep[ix9] ? sp * 2.6 : sp * 1.2);
+      var iR9 = vp9.x + vp9.w - sp * 1.2;
+      if (!an9.length || tt <= an9[0]) return iL9;
+      for (var aj9 = 1; aj9 < an9.length; aj9++) {
+        if (tt <= an9[aj9] + 1e-6) {
+          var f9 = (tt - an9[aj9 - 1]) / Math.max(0.001, an9[aj9] - an9[aj9 - 1]);
+          return iL9 + (iR9 - iL9) * ((aj9 - 1 + f9) / Math.max(1, an9.length - 1));
+        }
+      }
+      return iR9;
+    }
+    var scrollOff = (x0 + leftPad + plotW * 0.82) - rawX(view.time || 0);
+    function xOf(tt) { return rawX(tt) + scrollOff; }
+    function xOfOld(tt) {
       if (!lPos.length) return x0 + leftPad + (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW;
       var lo1 = 0, hi1 = lPos.length - 1, idx1 = 0;
       while (lo1 <= hi1) {
