@@ -143,7 +143,8 @@
           var staff0 = staffEl0 ? (parseInt(staffEl0.textContent, 10) || 1) : 1;
           if (isRest) {
             notes.push({ rest: true, start: secAt(startD), dur: Math.max(0.02, secAt(startD + dur) - secAt(startD)),
-              type: type, dots: dots, staff: staff0, voice: parseInt(txt(el, 'voice') || '1', 10) || 1, measure: mi });
+              type: type, dots: dots, staff: staff0, voice: parseInt(txt(el, 'voice') || '1', 10) || 1, measure: mi,
+              tick: startD, durTicks: dur });
             if (!isChord && !isGrace) { lastStart = t; t += dur; }
             continue;
           }
@@ -180,7 +181,8 @@
                 grace: isGrace, slash: isGrace && (el.getAttribute('slash') === 'yes'), beams: beams, acc: accTxt, arts: arts,
                 midi: (oct + 1) * 12 + (SEMI[step] | 0) + alter,
                 start: secAt(startD), dur: Math.max(0.02, secAt(startD + dur) - secAt(startD)),
-                measure: mi, diatonic: oct * 7 + (STEP[step] | 0), tuplet: tupAct > tupNor ? tupAct : 0
+                measure: mi, diatonic: oct * 7 + (STEP[step] | 0), tuplet: tupAct > tupNor ? tupAct : 0,
+                tick: startD, durTicks: dur
               };
               if (isGrace) { (pendingGrace || (pendingGrace = [])).push(n); }
               else { if (pendingGrace && pendingGrace.length) { n.graces = pendingGrace; pendingGrace = []; } notes.push(n); }
@@ -249,7 +251,37 @@
     var work = doc.getElementsByTagName('work-title')[0];
     var move = doc.getElementsByTagName('movement-title')[0];
     title = (work && work.textContent.trim()) || (move && move.textContent.trim()) || '';
+    function buildModel() {
+      var byStaff = {};
+      for (var mn = 0; mn < notes.length; mn++) {
+        var nn = notes[mn];
+        if (nn.rest) continue;
+        var st = nn.staff || 1;
+        var sm = byStaff[st] || (byStaff[st] = {});
+        var mm = sm[nn.measure] || (sm[nn.measure] = { index: nn.measure, voices: {} });
+        var vv = mm.voices[nn.voice] || (mm.voices[nn.voice] = []);
+        var lastCh = vv[vv.length - 1];
+        if (lastCh && Math.abs(lastCh.tick - nn.tick) < 0.001 && lastCh.staff === st) lastCh.notes.push(nn);
+        else vv.push({ tick: nn.tick, dur: nn.durTicks, staff: st, voice: nn.voice, notes: [nn] });
+      }
+      var staves = [];
+      for (var sk in byStaff) {
+        var msArr = [];
+        for (var mk in byStaff[sk]) {
+          var mo = byStaff[sk][mk], vs = [];
+          for (var vk in mo.voices) vs.push({ voice: parseInt(vk, 10), chords: mo.voices[vk] });
+          vs.sort(function (a, b) { return a.voice - b.voice; });
+          msArr.push({ index: mo.index, voices: vs });
+        }
+        msArr.sort(function (a, b) { return a.index - b.index; });
+        staves.push({ staff: parseInt(sk, 10), measures: msArr });
+      }
+      staves.sort(function (a, b) { return a.staff - b.staff; });
+      return { parts: [{ name: title, staves: staves }], divisions: divisions };
+    }
+
     return {
+      model: buildModel(),
       keys: (function () {
         try {
         var kk = [];
