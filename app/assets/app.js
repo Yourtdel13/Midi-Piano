@@ -410,10 +410,12 @@
       var img = state.bg;
       var sc = Math.max(w / img.width, h / img.height);
       var dw = img.width * sc, dh = img.height * sc;
-      if ((state.look.bgBlur || 0) > 0) { c.filter = 'blur(' + state.look.bgBlur + 'px)'; }
+      var fl = 'brightness(1.22) saturate(1.06)';
+      if ((state.look.bgBlur || 0) > 0) fl += ' blur(' + state.look.bgBlur + 'px)';
+      c.filter = fl;
       c.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
       c.filter = 'none';
-      c.fillStyle = 'rgba(4, 7, 18, 0.50)';
+      c.fillStyle = 'rgba(4, 7, 18, 0.36)';
       c.fillRect(0, 0, w, h);
     } else {
       var g = c.createLinearGradient(0, 0, 0, h);
@@ -2321,6 +2323,70 @@
   }
 
   function pickBackground(file) {
+    var rd0 = new FileReader();
+    rd0.onload = function () { openCrop(rd0.result); };
+    rd0.readAsDataURL(file);
+  }
+  function openCrop(dataUrl) {
+    var old = document.getElementById('cropOv'); if (old) old.remove();
+    var ov = document.createElement('div'); ov.id = 'cropOv';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:70;background:#000;display:flex;flex-direction:column';
+    var cv = document.createElement('canvas'); cv.style.cssText = 'flex:1;width:100%;display:block;touch-action:none';
+    var bar = document.createElement('div'); bar.style.cssText = 'display:flex;gap:10px;padding:10px;background:#0b1120';
+    var cancel = document.createElement('button'); cancel.textContent = '取消';
+    var ok = document.createElement('button'); ok.textContent = '确定';
+    [cancel, ok].forEach(function (b) { b.style.cssText = 'flex:1;padding:12px;border-radius:10px;border:1px solid #2c4468;background:#16233a;color:#dce9ff'; });
+    bar.appendChild(cancel); bar.appendChild(ok); ov.appendChild(cv); ov.appendChild(bar); document.body.appendChild(ov);
+    var img = new Image(), scale = 1, ox = 0, oy = 0, drag = null, pinch = null;
+    function layout() { var w = cv.clientWidth, h = cv.clientHeight; cv.width = w * 2; cv.height = h * 2; cv.style.height = h + 'px'; }
+    function draw() {
+      var w = cv.clientWidth, h = cv.clientHeight, c = cv.getContext('2d');
+      c.setTransform(2, 0, 0, 2, 0, 0); c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
+      if (img.width) {
+        var base = Math.max(w / img.width, h / img.height);
+        var dw = img.width * base * scale, dh = img.height * base * scale;
+        c.drawImage(img, (w - dw) / 2 + ox, (h - dh) / 2 + oy, dw, dh);
+      }
+      var fw = w * 0.82, fh = fw * 16 / 9; if (fh > h * 0.82) { fh = h * 0.82; fw = fh * 9 / 16; }
+      var fx = (w - fw) / 2, fy = (h - fh) / 2;
+      c.fillStyle = 'rgba(0,0,0,.58)';
+      c.fillRect(0, 0, w, fy); c.fillRect(0, fy + fh, w, h - fy - fh);
+      c.fillRect(0, fy, fx, fh); c.fillRect(fx + fw, fy, w - fx - fw, fh);
+      c.strokeStyle = '#7ee0c0'; c.lineWidth = 2; c.strokeRect(fx, fy, fw, fh);
+    }
+    img.onload = function () { layout(); draw(); };
+    img.src = dataUrl;
+    window.addEventListener('resize', function () { layout(); draw(); });
+    cv.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, ox: ox, oy: oy }; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', function (e) { if (drag) { ox = drag.ox + (e.clientX - drag.x); oy = drag.oy + (e.clientY - drag.y); draw(); } });
+    cv.addEventListener('pointerup', function () { drag = null; });
+    cv.addEventListener('wheel', function (e) { e.preventDefault(); scale = Math.max(0.6, Math.min(4, scale * (e.deltaY < 0 ? 1.08 : 0.92))); draw(); }, { passive: false });
+    cv.addEventListener('touchmove', function (e) { if (e.touches.length === 2) { var dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY, d = Math.sqrt(dx * dx + dy * dy); if (pinch) { scale = Math.max(0.6, Math.min(4, scale * d / Math.max(1, pinch))); draw(); } pinch = d; e.preventDefault(); } }, { passive: false });
+    cv.addEventListener('touchend', function () { pinch = null; });
+    cancel.onclick = function () { ov.remove(); };
+    ok.onclick = function () {
+      var w = cv.clientWidth, h = cv.clientHeight;
+      var base = Math.max(w / img.width, h / img.height);
+      var dw = img.width * base * scale, dh = img.height * base * scale;
+      var dx = (w - dw) / 2 + ox, dy = (h - dh) / 2 + oy;
+      var fw = w * 0.82, fh = fw * 16 / 9; if (fh > h * 0.82) { fh = h * 0.82; fw = fh * 9 / 16; }
+      var fx = (w - fw) / 2, fy = (h - fh) / 2;
+      var out = document.createElement('canvas'); out.width = 720; out.height = 1280;
+      var sx = (fx - dx) / (dw / img.width), sy = (fy - dy) / (dh / img.height);
+      var sw = fw / (dw / img.width), sh = fh / (dh / img.height);
+      out.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, 720, 1280);
+      var url = out.toDataURL('image/jpeg', 0.85);
+      var im2 = new Image();
+      im2.onload = function () {
+        state.bg = im2; bgCache = null;
+        try { localStorage.setItem('midiPiano.bg', url); localStorage.removeItem('midiPiano.bg.path'); } catch (e) { }
+        toast('背景已更换'); ov.remove();
+      };
+      im2.src = url;
+    };
+    return;
+  }
+  function pickBackgroundLegacy(file) {
     var reader = new FileReader();
     reader.onload = function () {
       var img = new Image();
@@ -2354,7 +2420,38 @@
     { id: 's3', name: '樱花 3', img: 'bg/sakura3.jpg' }, { id: 's4', name: '樱花 4', img: 'bg/sakura4.jpg' },
     { id: 's5', name: '樱花 5', img: 'bg/sakura5.jpg' }, { id: 's6', name: '樱花 6', img: 'bg/sakura6.jpg' },
     { id: 's7', name: '樱花 7', img: 'bg/sakura7.jpg' }, { id: 's8', name: '樱花 8', img: 'bg/sakura8.jpg' },
-    { id: 's9', name: '樱花 9', img: 'bg/sakura9.jpg' }
+    { id: 's9', name: '樱花 9', img: 'bg/sakura9.jpg' },
+    { id: 'a1', name: '二次元 1', img: 'bg/anime1.jpg' },
+    { id: 'a2', name: '二次元 2', img: 'bg/anime2.jpg' },
+    { id: 'a3', name: '二次元 3', img: 'bg/anime3.jpg' },
+    { id: 'a4', name: '二次元 4', img: 'bg/anime4.jpg' },
+    { id: 'a5', name: '二次元 5', img: 'bg/anime5.jpg' },
+    { id: 'a6', name: '二次元 6', img: 'bg/anime6.jpg' },
+    { id: 'a7', name: '二次元 7', img: 'bg/anime7.jpg' },
+    { id: 'a8', name: '二次元 8', img: 'bg/anime8.jpg' },
+    { id: 'a9', name: '二次元 9', img: 'bg/anime9.jpg' },
+    { id: 'a10', name: '二次元 10', img: 'bg/anime10.jpg' },
+    { id: 'a11', name: '二次元 11', img: 'bg/anime11.jpg' },
+    { id: 'a12', name: '二次元 12', img: 'bg/anime12.jpg' },
+    { id: 'a13', name: '二次元 13', img: 'bg/anime13.jpg' },
+    { id: 'a14', name: '二次元 14', img: 'bg/anime14.jpg' },
+    { id: 'a15', name: '二次元 15', img: 'bg/anime15.jpg' },
+    { id: 'a16', name: '二次元 16', img: 'bg/anime16.jpg' },
+    { id: 'a17', name: '二次元 17', img: 'bg/anime17.jpg' },
+    { id: 'a18', name: '二次元 18', img: 'bg/anime18.jpg' },
+    { id: 'a19', name: '二次元 19', img: 'bg/anime19.jpg' },
+    { id: 'a20', name: '二次元 20', img: 'bg/anime20.jpg' },
+    { id: 'a21', name: '二次元 21', img: 'bg/anime21.jpg' },
+    { id: 'a22', name: '二次元 22', img: 'bg/anime22.jpg' },
+    { id: 'a23', name: '二次元 23', img: 'bg/anime23.jpg' },
+    { id: 'a24', name: '二次元 24', img: 'bg/anime24.jpg' },
+    { id: 'a25', name: '二次元 25', img: 'bg/anime25.jpg' },
+    { id: 'a26', name: '二次元 26', img: 'bg/anime26.jpg' },
+    { id: 'a27', name: '二次元 27', img: 'bg/anime27.jpg' },
+    { id: 'a28', name: '二次元 28', img: 'bg/anime28.jpg' },
+    { id: 'a29', name: '二次元 29', img: 'bg/anime29.jpg' },
+    { id: 'a30', name: '二次元 30', img: 'bg/anime30.jpg' },
+    { id: 'a31', name: '二次元 31', img: 'bg/anime31.jpg' }
   ];
   function buildSystemBg(id) {
     var c = document.createElement('canvas'); c.width = 720; c.height = 1280;
