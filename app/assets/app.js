@@ -2205,8 +2205,28 @@
     if (!state.look.sidebar) { setControlsHidden(true); return; }
     setControlsHidden(false);
     if (state.playing) {
-      hideTimer = setTimeout(function () { setControlsHidden(true); }, 2600);
+      hideTimer = setTimeout(function () { setControlsHidden(true); }, 1000);
     }
+  }
+
+  var holdStart = 0;
+  function extendHide(ms) {
+    clearTimeout(hideTimer);
+    if (!state.look.sidebar) { setControlsHidden(true); return; }
+    setControlsHidden(false);
+    if (state.playing) hideTimer = setTimeout(function () { setControlsHidden(true); }, ms);
+  }
+  function bindHold() {
+    var cv = document.getElementById('stage');
+    if (!cv) return;
+    cv.addEventListener('pointerdown', function () { holdStart = Date.now(); }, true);
+    cv.addEventListener('pointerup', function () {
+      if (!holdStart) return;
+      var held = Date.now() - holdStart; holdStart = 0;
+      var extra = Math.min(3000, Math.max(0, held - 250));
+      extendHide(1000 + extra);
+    }, true);
+    cv.addEventListener('pointercancel', function () { holdStart = 0; }, true);
   }
 
   function updatePlayButton() {
@@ -2315,8 +2335,8 @@
         var url = tmp.toDataURL('image/jpeg', 0.85);
         var im2 = new Image();
         im2.onload = function () {
-          state.bg = im2;
-          try { localStorage.setItem('midiPiano.bg', url); } catch (e) { /* 空间不足 */ }
+          state.bg = im2; bgCache = null;
+          try { localStorage.setItem('midiPiano.bg', url); localStorage.removeItem('midiPiano.bg.sys'); } catch (e) { /* 空间不足 */ }
           toast('背景已更换');
         };
         im2.src = url;
@@ -2327,8 +2347,113 @@
     reader.readAsDataURL(file);
   }
 
+
+  var SYS_BGS = [
+    { id: 'black', name: '纯黑' }, { id: 'gray', name: '纯灰' },
+    { id: 's1', name: '樱花 1', img: 'bg/sakura1.jpg' }, { id: 's2', name: '樱花 2', img: 'bg/sakura2.jpg' },
+    { id: 's3', name: '樱花 3', img: 'bg/sakura3.jpg' }, { id: 's4', name: '樱花 4', img: 'bg/sakura4.jpg' },
+    { id: 's5', name: '樱花 5', img: 'bg/sakura5.jpg' }, { id: 's6', name: '樱花 6', img: 'bg/sakura6.jpg' },
+    { id: 's7', name: '樱花 7', img: 'bg/sakura7.jpg' }, { id: 's8', name: '樱花 8', img: 'bg/sakura8.jpg' },
+    { id: 's9', name: '樱花 9', img: 'bg/sakura9.jpg' }
+  ];
+  function buildSystemBg(id) {
+    var c = document.createElement('canvas'); c.width = 720; c.height = 1280;
+    var g = c.getContext('2d');
+    if (id === 'black') { g.fillStyle = '#000'; g.fillRect(0, 0, 720, 1280); }
+    else if (id === 'gray') { g.fillStyle = '#3a3a3a'; g.fillRect(0, 0, 720, 1280); }
+    else if (id === 'sakura') {
+      var gr = g.createLinearGradient(0, 0, 0, 1280); gr.addColorStop(0, '#2a1424'); gr.addColorStop(1, '#0c0710');
+      g.fillStyle = gr; g.fillRect(0, 0, 720, 1280);
+      for (var i = 0; i < 220; i++) {
+        var x = Math.random() * 720, y = Math.random() * 1280, r = 2 + Math.random() * 5;
+        g.fillStyle = 'rgba(255,' + (140 + Math.random() * 80) + ',' + (170 + Math.random() * 60) + ',' + (0.25 + Math.random() * 0.5) + ')';
+        g.beginPath(); g.ellipse(x, y, r, r * 0.6, Math.random() * 3, 0, Math.PI * 2); g.fill();
+      }
+    } else if (id === 'night' || id === 'aurora' || id === 'cyber') {
+      var g2 = g.createLinearGradient(0, 0, 0, 1280);
+      if (id === 'night') { g2.addColorStop(0, '#0a1430'); g2.addColorStop(1, '#03060f'); }
+      else if (id === 'aurora') { g2.addColorStop(0, '#04121c'); g2.addColorStop(0.5, '#0b2436'); g2.addColorStop(1, '#05070f'); }
+      else { g2.addColorStop(0, '#12021f'); g2.addColorStop(1, '#02040a'); }
+      g.fillStyle = g2; g.fillRect(0, 0, 720, 1280);
+      for (var j = 0; j < 120; j++) { g.fillStyle = 'rgba(255,255,255,' + (0.1 + Math.random() * 0.6) + ')'; g.fillRect(Math.random() * 720, Math.random() * 700, 1.5, 1.5); }
+      if (id === 'aurora') {
+        for (var k = 0; k < 5; k++) {
+          var gg = g.createRadialGradient(120 + k * 130, 260 + (k % 2) * 160, 10, 120 + k * 130, 260, 300);
+          gg.addColorStop(0, 'rgba(80,255,200,0.16)'); gg.addColorStop(1, 'rgba(0,0,0,0)');
+          g.fillStyle = gg; g.fillRect(0, 0, 720, 1280);
+        }
+      }
+      if (id === 'cyber') {
+        for (var m = 0; m < 26; m++) { g.strokeStyle = m % 2 ? 'rgba(255,61,242,0.18)' : 'rgba(0,229,255,0.18)'; g.beginPath(); g.moveTo(0, m * 52); g.lineTo(720, m * 52 + 40); g.stroke(); }
+      }
+    } else if (id === 'forest' || id === 'dusk' || id === 'snow' || id === 'sea') {
+      var g3 = g.createLinearGradient(0, 0, 0, 1280);
+      if (id === 'forest') { g3.addColorStop(0, '#0a1a12'); g3.addColorStop(1, '#030806'); }
+      else if (id === 'dusk') { g3.addColorStop(0, '#2a1430'); g3.addColorStop(0.6, '#7a2a3a'); g3.addColorStop(1, '#10060c'); }
+      else if (id === 'snow') { g3.addColorStop(0, '#1b2a3a'); g3.addColorStop(1, '#05080d'); }
+      else { g3.addColorStop(0, '#0a2230'); g3.addColorStop(1, '#02070b'); }
+      g.fillStyle = g3; g.fillRect(0, 0, 720, 1280);
+      if (id === 'snow' || id === 'dusk') { for (var n = 0; n < 180; n++) { g.fillStyle = 'rgba(255,255,255,' + (0.08 + Math.random() * 0.5) + ')'; var rr = 0.8 + Math.random() * 2.2; g.beginPath(); g.arc(Math.random() * 720, Math.random() * 1280, rr, 0, 7); g.fill(); } }
+      if (id === 'sea') { for (var q = 0; q < 18; q++) { g.strokeStyle = 'rgba(120,200,255,0.06)'; g.beginPath(); g.moveTo(0, 700 + q * 26); g.bezierCurveTo(240, 690 + q * 26, 480, 710 + q * 26, 720, 700 + q * 26); g.stroke(); } }
+    }
+    return c.toDataURL('image/jpeg', 0.82);
+  }
+  function applySystemBg(id) {
+    if (!confirm('图标来源于网络，B站图文等，侵权必删')) return;
+    var ent = null;
+    for (var ei = 0; ei < SYS_BGS.length; ei++) if (SYS_BGS[ei].id === id) ent = SYS_BGS[ei];
+    if (ent && ent.img) {
+      var im0 = new Image();
+      im0.onload = function () {
+        state.bg = im0; bgCache = null;
+        try { localStorage.setItem('midiPiano.bg.path', ent.img); localStorage.removeItem('midiPiano.bg'); localStorage.removeItem('midiPiano.bg.sys'); } catch (e) { /* ignore */ }
+        toast('背景已更换');
+      };
+      im0.onerror = function () { toast('背景图读取失败'); };
+      im0.src = ent.img;
+      return;
+    }
+    try {
+      var url = buildSystemBg(id);
+      var im = new Image();
+      im.onload = function () {
+        state.bg = im; bgCache = null;
+        try { localStorage.setItem('midiPiano.bg', url); localStorage.setItem('midiPiano.bg.sys', id); } catch (e) { /* ignore */ }
+        toast('背景已更换');
+      };
+      im.src = url;
+    } catch (e) { toast('切换失败'); }
+  }
+  function showBgMenu() {
+    var old = document.getElementById('bgMenu'); if (old) old.remove();
+    var ov = document.createElement('div'); ov.id = 'bgMenu';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(2,4,10,.82);display:flex;align-items:center;justify-content:center;padding:18px';
+    var box = document.createElement('div');
+    box.style.cssText = 'width:min(460px,94vw);max-height:80vh;overflow:auto;background:#0d1526;border:1px solid #263a5c;border-radius:18px;padding:16px;color:#e6efff';
+    var html = '<div style="font-size:15px;font-weight:700;margin-bottom:10px">背景</div>' +
+      '<button id="bgUseSys" style="width:100%;padding:12px;margin-bottom:8px;border-radius:12px;border:1px solid #2c4468;background:#16233a;color:#dce9ff">使用系统背景</button>' +
+      '<button id="bgUseFile" style="width:100%;padding:12px;margin-bottom:12px;border-radius:12px;border:1px solid #2c4468;background:#16233a;color:#dce9ff">导入图片</button>' +
+      '<div id="bgSysList" style="display:none;grid-template-columns:repeat(3,1fr);gap:8px">';
+    for (var i = 0; i < SYS_BGS.length; i++) html += '<button data-sys="' + SYS_BGS[i].id + '" style="padding:14px 6px;border-radius:12px;border:1px solid #2c4468;background:#101b2f;color:#cfe0ff;font-size:12px">' + SYS_BGS[i].name + '</button>';
+    html += '</div><button id="bgClose" style="width:100%;margin-top:12px;padding:10px;border-radius:12px;border:1px solid #2c4468;background:#0e1727;color:#9fb4d8">取消</button>';
+    box.innerHTML = html; ov.appendChild(box); document.body.appendChild(ov);
+    ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+    document.getElementById('bgUseSys').onclick = function () { var l = document.getElementById('bgSysList'); l.style.display = l.style.display === 'grid' ? 'none' : 'grid'; };
+    document.getElementById('bgUseFile').onclick = function () { ov.remove(); $('bgFile').click(); };
+    document.getElementById('bgClose').onclick = function () { ov.remove(); };
+    var btns = box.querySelectorAll('[data-sys]');
+    for (var b = 0; b < btns.length; b++) btns[b].onclick = function () { applySystemBg(this.getAttribute('data-sys')); ov.remove(); };
+  }
+
   function restoreBackground() {
     try {
+      var bp = localStorage.getItem('midiPiano.bg.path');
+      if (bp) {
+        var im9 = new Image();
+        im9.onload = function () { state.bg = im9; bgCache = null; };
+        im9.src = bp;
+        return;
+      }
       var url = localStorage.getItem('midiPiano.bg');
       if (!url) return;
       var img = new Image();
@@ -2397,7 +2522,8 @@
   }
   function bindUI() {
     $('btnMidi').addEventListener('click', function () { $('midiFile').click(); });
-    $('btnBg').addEventListener('click', function () { $('bgFile').click(); });
+    $('btnBg').addEventListener('click', function () { showBgMenu(); });
+    bindHold();
     $('btnLook').addEventListener('click', openSheet);
     $('sideTab').addEventListener('click', function () {
       state.look.sidebar = true;
@@ -2552,7 +2678,7 @@
 
     $('bgFile').addEventListener('change', function (e) {
       var f = e.target.files && e.target.files[0];
-      if (f) pickBackground(f);
+      if (f) { if (confirm('图标来源于网络，B站图文等，侵权必删')) pickBackground(f); else e.target.value = ''; }
       e.target.value = '';
     });
 
