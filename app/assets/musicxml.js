@@ -280,8 +280,32 @@
       return { parts: [{ name: title, staves: staves }], divisions: divisions };
     }
 
+    // 第二步：播放序列改为从模型派生（模型成为唯一数据源）
+    var __model = buildModel();
+    var __mnotes = [], __rests = [];
+    for (var __pi = 0; __pi < __model.parts.length; __pi++) {
+      var __staves = __model.parts[__pi].staves;
+      for (var __si = 0; __si < __staves.length; __si++) {
+        var __ms = __staves[__si].measures;
+        for (var __mi = 0; __mi < __ms.length; __mi++) {
+          var __vs = __ms[__mi].voices;
+          for (var __vi = 0; __vi < __vs.length; __vi++) {
+            var __cs = __vs[__vi].chords;
+            for (var __ci = 0; __ci < __cs.length; __ci++) {
+              var __ns = __cs[__ci].notes;
+              for (var __ni = 0; __ni < __ns.length; __ni++) __mnotes.push(__ns[__ni]);
+            }
+          }
+        }
+      }
+    }
+    for (var __ri = 0; __ri < notes.length; __ri++) if (notes[__ri].rest) __rests.push(notes[__ri]);
+    notes = __mnotes.concat(__rests).sort(function (a, b) {
+      return (a.tick - b.tick) || ((a.staff || 1) - (b.staff || 1)) || ((a.voice || 1) - (b.voice || 1)) || (a.midi - b.midi);
+    });
+
     return {
-      model: buildModel(),
+      model: __model,
       keys: (function () {
         try {
         var kk = [];
