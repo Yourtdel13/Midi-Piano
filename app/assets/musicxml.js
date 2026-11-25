@@ -1119,5 +1119,45 @@
     ctx.restore();
   }
 
-  global.MusicXML = { parseXML: parseXML, unzipMXL: unzipMXL, drawScore: drawScore };
+  // 第三步：模型 → DisplayList（与绘制解耦，纯数据）
+  function layout(score, opts) {
+    opts = opts || {};
+    var width = Math.max(120, opts.width || 720);
+    var size = opts.size || 1;
+    var gap = Math.max(6, 8.2 * size);
+    var sp = gap;
+    var ms = score.measures || [];
+    var counts = [];
+    var model = score.model;
+    if (model && model.parts && model.parts[0]) {
+      var staves = model.parts[0].staves;
+      for (var si2 = 0; si2 < staves.length; si2++) {
+        var mms = staves[si2].measures;
+        for (var mi2 = 0; mi2 < mms.length; mi2++) {
+          var mo2 = mms[mi2];
+          var c2 = 0;
+          for (var vi2 = 0; vi2 < mo2.voices.length; vi2++) c2 += mo2.voices[vi2].chords.length;
+          counts[mo2.index] = (counts[mo2.index] || 0) + c2;
+        }
+      }
+    }
+    var total = 0, mins = [];
+    for (var i2 = 0; i2 < ms.length; i2++) {
+      var cnt2 = counts[i2] || 0;
+      var mw2 = gap * 2.4 + cnt2 * gap * 1.15;
+      mins.push(mw2); total += mw2;
+    }
+    var scale = total > 0 ? Math.min(1, width / total) : 1;
+    var extra = Math.max(0, width - total * scale);
+    var pos = [], cur = 0;
+    for (var j2 = 0; j2 < ms.length; j2++) {
+      var share = ms.length ? extra / ms.length : 0;
+      var w2 = mins[j2] * scale + share;
+      pos.push({ index: j2, start: ms[j2].start, end: ms[j2].end, x: cur, w: w2 });
+      cur += w2;
+    }
+    return { key: width + '|' + size + '|' + ms.length, sp: sp, measures: pos, width: cur, size: size };
+  }
+
+  global.MusicXML = { parseXML: parseXML, unzipMXL: unzipMXL, drawScore: drawScore, layout: layout };
 })(window);

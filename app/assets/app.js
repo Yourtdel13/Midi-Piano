@@ -1890,6 +1890,12 @@
       if (state.score.notes[pq].start <= st2) playedN++; else break;
     }
     var key2 = [s.color, s.size, s.pos, s.glow, s.glowLevel, s.bgAlpha, vw, vh, bucket, playedN].join('|');
+    if (window.MusicXML && MusicXML.layout) {
+      var dlKey = (vw - 8) + '|' + s.size + '|' + (state.score.measures ? state.score.measures.length : 0);
+      if (!state.score.display || state.score.display.key !== dlKey) {
+        state.score.display = MusicXML.layout(state.score, { width: vw - 8, size: s.size });
+      }
+    }
     if (key2 !== scoreBufKey) {
       scoreBufCtx.setTransform(dpr2, 0, 0, dpr2, 0, 0);
       scoreBufCtx.clearRect(0, 0, vw, vh);
