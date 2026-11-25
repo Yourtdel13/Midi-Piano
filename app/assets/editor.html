@@ -1,0 +1,102 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>打谱 · 编辑器</title>
+<style>
+body{margin:0;background:#070b14;color:#e8f1ff;font-family:system-ui,sans-serif}
+header{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #1c2740}
+h1{font-size:15px;margin:0;flex:1}
+button{background:#16233c;border:1px solid #2b3d63;color:#dbe8ff;border-radius:10px;padding:8px 10px;font-size:13px}
+button:active{background:#233457}
+#wrap{position:relative;height:calc(100vh - 52px);overflow:auto}
+canvas{display:block;background:#0a1020}
+#tip{position:fixed;left:10px;bottom:10px;font-size:11px;color:#7f92b3}
+</style></head><body>
+<header>
+  <h1>打谱 · 编辑器</h1>
+  <button id="bImp">导入</button>
+  <button id="bFlat">♭</button>
+  <button id="bSharp">♯</button>
+  <button id="bUndo">撤销</button>
+  <button id="bSave">导出</button>
+  <button onclick="location.href='index.html'">返回</button>
+  <input id="file" type="file" accept=".xml,.musicxml,.mxl" style="display:none">
+</header>
+<div id="wrap"><canvas id="cv"></canvas></div>
+<div id="tip">点音符选中，♯/♭ 改音高；导出为 MusicXML（1/16 网格，模型直出）</div>
+<script src="musicxml.js"></script>
+<script>
+(function(){
+  var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+  var score=null, sel=null, undo=[], XPP=6, ROW=9, PAD=40, TICK=480;
+  function midiName(m){var n=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][m%12];return n+(Math.floor(m/12)-1);}
+  function draw(){
+    var w=Math.max(cv.parentElement.clientWidth,600);
+    var notes=score?score.notes.filter(function(n){return !n.rest;}):[];
+    var maxTick=1; notes.forEach(function(n){maxTick=Math.max(maxTick,n.tick+n.durTicks);});
+    var h=Math.max(300, cv.parentElement.clientHeight);
+    cv.width=w; cv.height=h; cv.style.width=w+'px'; cv.style.height=h+'px';
+    ctx.clearRect(0,0,w,h); ctx.fillStyle='#0a1020'; ctx.fillRect(0,0,w,h);
+    // grid
+    ctx.strokeStyle='#14203a'; ctx.lineWidth=1;
+    for(var t=0;t<=maxTick;t+=TICK*4){var x=PAD+t/maxTick*(w-PAD-10);ctx.beginPath();ctx.moveTo(x,10);ctx.lineTo(x,h-10);ctx.stroke();}
+    for(var p=21;p<=108;p+=12){var y=h-PAD-(p-21)*ROW;ctx.strokeStyle='#101a30';ctx.beginPath();ctx.moveTo(PAD-20,y);ctx.lineTo(w-10,y);ctx.stroke();ctx.fillStyle='#4c5f80';ctx.font='10px sans-serif';ctx.fillText(midiName(p),4,y+3);}
+    notes.forEach(function(n){
+      var x=PAD+n.tick/maxTick*(w-PAD-10), y=h-PAD-(n.midi-21)*ROW, ww=Math.max(3,(n.durTicks/maxTick)*(w-PAD-10));
+      ctx.fillStyle=(sel===n)?'#ffd166':(n.staff===2?'#5eb8ff':'#7ee0c0');
+      ctx.fillRect(x,y-ROW+2,ww,ROW-3);
+    });
+    if(!score){ctx.fillStyle='#7f92b3';ctx.font='13px sans-serif';ctx.fillText('导入 MusicXML / MXL 开始',PAD,60);}
+  }
+  function hit(e){
+    var r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+    var notes=score?score.notes.filter(function(n){return !n.rest;}):[];
+    var maxTick=1; notes.forEach(function(n){maxTick=Math.max(maxTick,n.tick+n.durTicks);});
+    var h=cv.height;
+    for(var i=0;i<notes.length;i++){var n=notes[i];
+      var x=PAD+n.tick/maxTick*(cv.width-PAD-10), y=h-PAD-(n.midi-21)*ROW;
+      if(mx>=x-2&&mx<=x+Math.max(6,(n.durTicks/maxTick)*(cv.width-PAD-10))&&my>=y-ROW&&my<=y){return n;}}
+    return null;
+  }
+  cv.addEventListener('pointerdown',function(e){sel=hit(e);draw();});
+  function shift(d){
+    if(!sel)return;
+    var grp=score.notes.filter(function(n){return !n.rest&&n.tick===sel.tick&&n.staff===sel.staff;});
+    undo.push(grp.map(function(n){return {n:n,midi:n.midi};}));
+    grp.forEach(function(n){n.midi+=d;n.alter=(n.alter||0)+d;});
+    draw();
+  }
+  document.getElementById('bSharp').onclick=function(){shift(1);};
+  document.getElementById('bFlat').onclick=function(){shift(-1);};
+  document.getElementById('bUndo').onclick=function(){var u=undo.pop();if(u)u.forEach(function(o){o.n.midi=o.midi;});draw();};
+  document.getElementById('bImp').onclick=function(){document.getElementById('file').click();};
+  document.getElementById('file').onchange=function(e){
+    var f=e.target.files[0]; if(!f)return; var rd=new FileReader();
+    rd.onload=function(){var done=function(xml){try{score=MusicXML.parseXML(xml);sel=null;undo=[];draw();}catch(err){alert('解析失败：'+err.message);}};
+      if(/\.mxl$/i.test(f.name)) MusicXML.unzipMXL(rd.result).then(done).catch(function(e){alert('解压失败：'+e.message);});
+      else done(new TextDecoder('utf-8').decode(rd.result));};
+    rd.readAsArrayBuffer(f);
+  };
+  document.getElementById('bSave').onclick=function(){
+    if(!score){alert('先导入');return;}
+    var notes=score.notes.filter(function(n){return !n.rest;});
+    var div=TICK, out=['<?xml version="1.0" encoding="UTF-8"?>','<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">','<score-partwise version="3.1"><part-list><score-part id="P1"><part-name>Piano</part-name></score-part></part-list><part id="P1">'];
+    var maxM=0;notes.forEach(function(n){maxM=Math.max(maxM,n.measure||0);});
+    for(var m=0;m<=maxM;m++){
+      out.push('<measure number="'+(m+1)+'">'+(m===0?'<attributes><divisions>'+div+'</divisions><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>':''));
+      var mn=notes.filter(function(n){return (n.measure||0)===m;}).sort(function(a,b){return a.tick-b.tick;});
+      var cur=0;
+      mn.forEach(function(n){
+        if(n.tick>cur) out.push('<forward><duration>'+(n.tick-cur)+'</duration></forward>');
+        out.push('<note><pitch><step>'+['C','C','D','D','E','F','F','G','G','A','A','B'][n.midi%12]+'</step><alter>'+(n.midi%12===1||n.midi%12===3||n.midi%12===6||n.midi%12===8||n.midi%12===10?1:0)+'</alter><octave>'+(Math.floor(n.midi/12)-1)+'</octave></pitch><duration>'+Math.max(1,n.durTicks||div)+'</duration><voice>'+(n.voice||1)+'</voice><type>quarter</type><staff>'+(n.staff||1)+'</staff></note>');
+        cur=n.tick+Math.max(1,n.durTicks||div);
+      });
+      out.push('</measure>');
+    }
+    out.push('</part></score-partwise>');
+    var blob=new Blob([out.join('\n')],{type:'application/xml'}), a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='edited.musicxml'; a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  };
+  window.addEventListener('resize',draw); draw();
+})();
+</script></body></html>
