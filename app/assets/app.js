@@ -1936,6 +1936,9 @@
     pink: '#ff8fc4', red: '#ff6b7a', green: '#5ee08a', orange: '#ff9a3d', rose: '#ff9fc0' };
   var scoreBuf = null, scoreBufCtx = null, scoreBufAt = 0, scoreBufKey = '';
   function drawExternalScore(t) {
+    try { drawExternalScoreInner(t); } catch (e) { logLine('EXT ' + (e && e.message ? e.message : e)); }
+  }
+  function drawExternalScoreInner(t) {
     var ex = state.look.ext || {}; var imgs = state.ext.imgs || [];
     if (!imgs.length) return;
     var vw = window.innerWidth, x = 4, y = (state.look.score.pos || 20), w = vw - 8, h = 160 * (state.look.score.size || 0.9);
@@ -2750,11 +2753,37 @@
   function bindUI() {
     var exI = $('extImport'), exF = $('extFile');
     if (exI && exF) exI.addEventListener('click', function () { exF.click(); });
+    function pdfToImages(buf) {
+      if (!window.pdfjsLib) { toast('PDF 组件未加载'); return; }
+      var task = pdfjsLib.getDocument({ data: new Uint8Array(buf) });
+      task.promise.then(function (pdf) {
+        var total = pdf.numPages, done = 0;
+        function next(p) {
+          if (p > total) { toast('PDF 已导入 ' + total + ' 页'); draw(); return; }
+          pdf.getPage(p).then(function (page) {
+            var vp = page.getViewport({ scale: 1 });
+            var sc = Math.min(2.2, 1600 / vp.width);
+            var v2 = page.getViewport({ scale: sc });
+            var cv = document.createElement('canvas'); cv.width = v2.width; cv.height = v2.height;
+            page.render({ canvasContext: cv.getContext('2d'), viewport: v2 }).promise.then(function () {
+              var im = new Image();
+              im.onload = function () { state.ext.imgs.push(im); next(p + 1); };
+              im.src = cv.toDataURL('image/jpeg', 0.85);
+            });
+          }).catch(function (e) { logLine('PDF page ' + p + ': ' + (e && e.message ? e.message : e)); next(p + 1); });
+        }
+        next(1);
+        toast('正在导入 PDF（' + total + ' 页）');
+      }).catch(function (e) { toast('PDF 解析失败：' + (e && e.message ? e.message : e)); logLine('PDF: ' + (e && e.message ? e.message : e)); });
+    }
     if (exF) exF.addEventListener('change', function () {
       var fs = Array.prototype.slice.call(this.files || []);
       var left = fs.length;
       if (!left) return;
       fs.forEach(function (f) {
+        if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
+          var rp = new FileReader(); rp.onload = function () { pdfToImages(rp.result); }; rp.readAsArrayBuffer(f); return;
+        }
         var rd = new FileReader();
         rd.onload = function () {
           var im = new Image();
@@ -3188,6 +3217,7 @@
   }
 
   function start() {
+    try { if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; } catch (e) { }
     resize();
     initStars();
     restoreBackground();
