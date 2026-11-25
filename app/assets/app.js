@@ -21,7 +21,7 @@
     look: { bgBlur: 0, perfAuto: false, shape: 'capsule', fx: 'splash', gradient: 'random', pedal: true, topbar: true,
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
       leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true, collapsed: false,
-      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, guiAlpha: 72, guiColor: 'navy', lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60, ext: { on: false, lines: 4, alpha: 85 },
+      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, guiAlpha: 72, guiColor: 'navy', lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60, ext: { on: false, lines: 4, alpha: 85, mpl: 0, xoff: 0, yoff: 0, lineShift: 0 },
       score: { on: true, glow: true, color: 'white', pos: 20, size: 0.9, glowLevel: 1, bgAlpha: 0.72 } },
     freePlay: false, ext: { imgs: [] }, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
@@ -984,7 +984,11 @@
       if (o && o.ext && typeof o.ext === 'object') {
         if (typeof o.ext.on === 'boolean') state.look.ext.on = o.ext.on;
         if (typeof o.ext.lines === 'number') state.look.ext.lines = Math.max(1, Math.min(8, Math.round(o.ext.lines)));
-        if (typeof o.ext.alpha === 'number') state.look.ext.alpha = Math.max(20, Math.min(100, Math.round(o.ext.alpha)));
+        if (typeof o.ext.alpha === 'number') state.look.ext.alpha = Math.max(10, Math.min(100, Math.round(o.ext.alpha)));
+        if (typeof o.ext.mpl === 'number') state.look.ext.mpl = Math.max(0, Math.min(12, Math.round(o.ext.mpl)));
+        if (typeof o.ext.xoff === 'number') state.look.ext.xoff = Math.max(-200, Math.min(200, Math.round(o.ext.xoff)));
+        if (typeof o.ext.yoff === 'number') state.look.ext.yoff = Math.max(-120, Math.min(120, Math.round(o.ext.yoff)));
+        if (typeof o.ext.lineShift === 'number') state.look.ext.lineShift = Math.round(o.ext.lineShift);
       }
       if (typeof o.linePower === 'number') state.look.linePower = Math.max(0, Math.min(3, Math.round(o.linePower)));
       if (typeof o.mistOn === 'boolean') state.look.mistOn = o.mistOn;
@@ -1134,6 +1138,12 @@
     var exL = $('extLines'); if (exL) exL.value = String(state.look.ext.lines);
     var exLv = $('extLinesVal'); if (exLv) exLv.textContent = String(state.look.ext.lines);
     var exA = $('extAlpha'); if (exA) exA.value = String(state.look.ext.alpha);
+    var exM = $('extMpl'); if (exM) exM.value = String(state.look.ext.mpl || 0);
+    var exMv = $('extMplVal'); if (exMv) exMv.textContent = (state.look.ext.mpl | 0) > 0 ? (state.look.ext.mpl + ' 小节') : '自动';
+    var exX = $('extX'); if (exX) exX.value = String(state.look.ext.xoff | 0);
+    var exXv = $('extXVal'); if (exXv) exXv.textContent = String(state.look.ext.xoff | 0);
+    var exY = $('extY'); if (exY) exY.value = String(state.look.ext.yoff | 0);
+    var exYv = $('extYVal'); if (exYv) exYv.textContent = String(state.look.ext.yoff | 0);
     var exAv = $('extAlphaVal'); if (exAv) exAv.textContent = state.look.ext.alpha + '%';
     var ga = $('guiAlpha');
     if (ga) ga.value = String(state.look.guiAlpha | 0);
@@ -1949,12 +1959,27 @@
     var vw = window.innerWidth, x = 4, y = (state.look.score.pos || 20), w = vw - 8, h = 160 * (state.look.score.size || 0.9);
     var dur = Math.max(0.1, state.duration || 1);
     var lines = Math.max(1, state.ext.lines | 0), total = imgs.length * lines;
-    var line = Math.min(total - 1, Math.max(0, Math.floor((t / dur) * total)));
+    var starts = state.bars && state.bars.length ? state.bars : null;
+    var line;
+    var mpl = state.look.ext.mpl | 0;
+    if (mpl > 0 && starts) {
+      var lo = 0, hi = starts.length - 1;
+      while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (starts[mid] <= t + 1e-6) lo = mid; else hi = mid - 1; }
+      line = Math.floor(lo / mpl) + (state.look.ext.lineShift | 0);
+    } else if (starts) {
+      var per = Math.max(1, Math.ceil(starts.length / total));
+      var lo2 = 0, hi2 = starts.length - 1;
+      while (lo2 < hi2) { var md = (lo2 + hi2 + 1) >> 1; if (starts[md] <= t + 1e-6) lo2 = md; else hi2 = md - 1; }
+      line = Math.floor(lo2 / per) + (state.look.ext.lineShift | 0);
+    } else {
+      line = Math.floor((t / dur) * total) + (state.look.ext.lineShift | 0);
+    }
+    line = Math.min(total - 1, Math.max(0, line));
     var page = Math.min(imgs.length - 1, Math.floor(line / lines)), within = line % lines;
     var img = imgs[page]; if (!img || !img.width) return;
     ctx.save();
     ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
-    ctx.globalAlpha = (state.ext.alpha || 85) / 100;
+    ctx.globalAlpha = (state.look.ext.alpha || 85) / 100;
     var sc = w / img.width, dh = img.height * sc;
     var rowH = dh / lines;
     var off = y + h / 2 - (within + 0.5) * rowH;
@@ -2801,6 +2826,18 @@
       this.value = '';
     });
     var exC = $('extClear'); if (exC) exC.addEventListener('click', function () { state.ext.imgs.length = 0; toast('已清除谱面图片'); draw(); });
+    var exM = $('extMpl'); if (exM) exM.addEventListener('input', function () { state.look.ext.mpl = Math.max(0, Math.min(12, +this.value || 0)); var v = $('extMplVal'); if (v) v.textContent = state.look.ext.mpl > 0 ? (state.look.ext.mpl + ' 小节') : '自动'; saveLook(); draw(); });
+    var exX = $('extX'); if (exX) exX.addEventListener('input', function () { state.look.ext.xoff = Math.max(-200, Math.min(200, +this.value || 0)); var v = $('extXVal'); if (v) v.textContent = String(state.look.ext.xoff); saveLook(); draw(); });
+    var exY = $('extY'); if (exY) exY.addEventListener('input', function () { state.look.ext.yoff = Math.max(-120, Math.min(120, +this.value || 0)); var v = $('extYVal'); if (v) v.textContent = String(state.look.ext.yoff); saveLook(); draw(); });
+    var exAp = $('extApply'); if (exAp) exAp.addEventListener('click', function () {
+      var starts = state.bars || [];
+      if (!starts.length) { toast('MIDI 没有小节信息'); return; }
+      var t = songTime(), lo = 0, hi = starts.length - 1;
+      while (lo < hi) { var md = (lo + hi + 1) >> 1; if (starts[md] <= t + 1e-6) lo = md; else hi = md - 1; }
+      var mpl = state.look.ext.mpl | 0; if (mpl <= 0) { toast('先把每行小节数设成固定值'); return; }
+      state.look.ext.lineShift = -Math.floor(lo / mpl);
+      saveLook(); toast('已按当前播放位置对齐'); draw();
+    });
     var exLs = $('extLines'); if (exLs) exLs.addEventListener('input', function () { state.look.ext.lines = Math.max(1, Math.min(8, +this.value || 4)); var v = $('extLinesVal'); if (v) v.textContent = String(state.look.ext.lines); saveLook(); draw(); });
     var exAs = $('extAlpha'); if (exAs) exAs.addEventListener('input', function () { state.look.ext.alpha = Math.max(20, Math.min(100, +this.value || 85)); var v = $('extAlphaVal'); if (v) v.textContent = state.look.ext.alpha + '%'; saveLook(); draw(); });
     var lg = $('logExport'); if (lg) lg.addEventListener('click', exportLog);
