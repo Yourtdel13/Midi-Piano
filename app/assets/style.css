@@ -644,3 +644,9 @@ body.tut-on #stage { visibility: hidden; }
 .home-sub { margin-bottom: 22px; }
 .home-btn { padding: 14px 16px; border-radius: 16px; }
 .home-btn .hb-ico { background: rgba(255,255,255,.06); }
+
+.bpm-bubble { position: fixed; left: 14px; top: 46%; z-index: 28; padding: 10px 14px; border-radius: 14px; font-size: 13px; color: #fff;
+  background: linear-gradient(140deg, rgba(76,201,240,.38), rgba(247,37,133,.30)); border: 1px solid rgba(255,255,255,.28);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transition: opacity .35s ease, transform .35s ease; pointer-events: none; }
+.bpm-bubble.hidden { opacity: 0; transform: translateX(-10px); }
+body.chrome-off #btnLook, body.chrome-off #topOpen, body.chrome-off #controls, body.chrome-off #sideTab { opacity: 0 !important; pointer-events: none !important; }

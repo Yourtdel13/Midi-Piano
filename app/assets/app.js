@@ -338,6 +338,8 @@
     state.playing = true;
     updatePlayButton();
     bumpControls();
+    showBpmBubble();
+    chromeShow();
     startScheduler();
   }
 
@@ -351,6 +353,7 @@
     updateTransport(state.position);
     clearTimeout(hideTimer);
     setControlsHidden(false);
+    chromeStay();
   }
 
   function togglePlay() { if (state.playing) pause(); else play(); }
@@ -1011,11 +1014,50 @@
     try { localStorage.setItem(LOOK_KEY, JSON.stringify(state.look)); } catch (e) { /* 无痕模式 */ }
   }
   var GUI_HEX = { navy: '14,20,38', black: '8,10,16', purple: '30,18,54', teal: '10,36,44', pink: '44,18,36', gold: '40,32,16' };
+  var LOG = [];
+  function logLine(s) { try { LOG.push(new Date().toTimeString().slice(0, 8) + ' ' + s); if (LOG.length > 300) LOG.shift(); } catch (e) { } }
+  window.addEventListener('error', function (e) { logLine('ERR ' + (e.message || '') + ' @' + (e.filename || '') + ':' + (e.lineno || 0)); });
+  window.addEventListener('unhandledrejection', function (e) { logLine('REJ ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))); });
+
+  function bpmAt(t) {
+    var segs = state.tempos || [];
+    if (!segs.length) return 120;
+    var lo = 0, hi = segs.length - 1;
+    while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (segs[mid].sec <= t + 1e-6) lo = mid; else hi = mid - 1; }
+    return Math.round(60000000 / (segs[lo].us || 500000));
+  }
+  var bpmTimer = 0;
+  function showBpmBubble() {
+    var el = document.getElementById('bpmBubble');
+    if (!el) return;
+    var t = (typeof songTime === 'function') ? songTime() : 0;
+    var k = document.getElementById('songKey');
+    el.textContent = 'BPM ' + bpmAt(t) + (k && k.textContent ? ' · ' + k.textContent : '');
+    el.classList.remove('hidden');
+    clearTimeout(bpmTimer);
+    bpmTimer = setTimeout(function () { el.classList.add('hidden'); }, 3000);
+  }
+
+  var chromeTimer = 0, chromeOff = false;
+  function chromeHidden() { return chromeOff; }
+  function chromeHide() { chromeOff = true; document.body.classList.add('chrome-off'); }
+  function chromeShow() {
+    if (chromeOff) { chromeOff = false; document.body.classList.remove('chrome-off'); }
+    clearTimeout(chromeTimer);
+    if (state.playing && !state.home) chromeTimer = setTimeout(chromeHide, 3000);
+  }
+  function chromeStay() { clearTimeout(chromeTimer); chromeOff = false; document.body.classList.remove('chrome-off'); }
+
   function applyGui() {
     var root = document.documentElement;
     root.style.setProperty('--gui-rgb', GUI_HEX[state.look.guiColor] || GUI_HEX.navy);
     root.style.setProperty('--gui-a', (state.look.guiAlpha / 100).toFixed(2));
   }
+
+  document.addEventListener('pointerdown', function () {
+    if (state.home) return;
+    if (chromeOff) chromeShow();
+  }, true);
 
   function applyLookUI() {
     applyGui();
@@ -2329,6 +2371,7 @@
   function loadMidiBuffer(buf, name) {
     try {
       var parsed = MidiParser.parseMidi(buf);
+    state.tempos = parsed.tempos || [];
       loadParsed(parsed, name.replace(/\.(mid|midi)$/i, ''));
       toast('已加载：' + parsed.notes.length + ' 个音符');
     } catch (e) {
@@ -2651,7 +2694,22 @@
     var tc = $('topCollapse'); if (tc) tc.addEventListener('click', function () { state.look.collapsed = true; saveLook(); applyCollapse(); });
     var to = $('topOpen'); if (to) to.addEventListener('click', function () { state.look.collapsed = false; saveLook(); applyCollapse(); });
   }
+  function exportLog() {
+    var lines = ['MIDI Piano 3.49 log', 'time: ' + new Date().toString(), 'ua: ' + navigator.userAgent, 'screen: ' + screen.width + 'x' + screen.height + ' dpr=' + (window.devicePixelRatio || 1), 'notes: ' + (state.notes ? state.notes.length : 0), '--- errors/logs ---'].concat(LOG).join('\n');
+    var ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;z-index:80;background:rgba(2,4,10,.94);padding:12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px';
+    var bar = document.createElement('div'); bar.style.cssText = 'display:flex;gap:8px';
+    var t1 = document.createElement('b'); t1.textContent = '运行日志'; t1.style.cssText = 'flex:1;color:#dfeaff';
+    var cp = document.createElement('button'); cp.textContent = '复制'; cp.style.cssText = 'padding:8px 12px;border-radius:9px;background:#16233c;color:#dbe8ff;border:1px solid #2b3d63';
+    var cl = document.createElement('button'); cl.textContent = '关闭'; cl.style.cssText = cp.style.cssText;
+    bar.appendChild(t1); bar.appendChild(cp); bar.appendChild(cl);
+    var ta = document.createElement('textarea'); ta.value = lines; ta.style.cssText = 'flex:1;background:#0a1020;color:#cfe0ff;border:1px solid #22304d;border-radius:9px;padding:9px;font:12px monospace';
+    ov.appendChild(bar); ov.appendChild(ta); document.body.appendChild(ov);
+    cl.onclick = function () { ov.remove(); };
+    cp.onclick = function () { ta.select(); try { document.execCommand('copy'); } catch (e) { } if (navigator.clipboard) navigator.clipboard.writeText(lines); };
+  }
+
   function bindUI() {
+    var lg = $('logExport'); if (lg) lg.addEventListener('click', exportLog);
     $('btnMidi').addEventListener('click', function () { $('midiFile').click(); });
     $('btnBg').addEventListener('click', function () { showBgMenu(); });
     bindHold();

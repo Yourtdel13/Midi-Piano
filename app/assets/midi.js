@@ -362,6 +362,7 @@
     for (var q = 0; q < notes.length; q++) trackSet[notes[q].track] = true;
 
     return {
+      tempos: segs,
       notes: notes,
       duration: duration,
       name: trackName,

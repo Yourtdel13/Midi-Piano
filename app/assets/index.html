@@ -60,7 +60,7 @@
         <span class="hb-txt"><b>退出</b><em>关闭应用</em></span>
       </button>
     </div>
-    <div class="home-foot">DSH · v3.48</div>
+    <div class="home-foot">DSH · v3.49</div>
   </div>
 </div>
 
@@ -99,6 +99,7 @@
 </div>
 
 <div id="toast"></div>
+  <div id="bpmBubble" class="bpm-bubble hidden"></div>
 
 <div id="sheetBack" class="sheet-back hidden"></div>
 <section id="sheet" class="sheet hidden" aria-label="设置">
@@ -282,6 +283,8 @@
       <div class="opt-row"><input id="guiAlpha" type="range" min="35" max="100" step="1" value="72" style="grid-column:1/-1"></div>
       <div class="sheet-label">界面颜色</div>
       <div class="opt-row" id="guiColorOpts"><button class="opt" data-guicolor="navy">深蓝</button><button class="opt" data-guicolor="black">墨黑</button><button class="opt" data-guicolor="purple">紫夜</button><button class="opt" data-guicolor="teal">青墨</button><button class="opt" data-guicolor="pink">夜樱</button><button class="opt" data-guicolor="gold">暖金</button></div>
+      <div class="sheet-label">运行日志</div>
+      <div class="opt-row"><button class="opt" id="logExport" style="grid-column:1/-1">导出运行日志 txt</button></div>
       <div class="sheet-label">开始界面</div>
     <div class="opt-row" id="homeOpts">
       <button class="opt" data-home="on">返回开始界面</button>
