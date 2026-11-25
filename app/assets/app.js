@@ -3218,7 +3218,21 @@
   }
 
   function start() {
-    try { if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; } catch (e) { }
+    (function initPdfWorker() {
+      if (!window.pdfjsLib) return;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'vendor/pdf.worker.min.js', true);
+        xhr.responseType = 'text';
+        xhr.onload = function () {
+          if (xhr.responseText && (xhr.status === 200 || xhr.status === 0)) {
+            try { pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([xhr.responseText], { type: 'application/javascript' })); } catch (e2) { }
+          }
+        };
+        xhr.send();
+      } catch (e) { }
+    })();
     resize();
     initStars();
     restoreBackground();
