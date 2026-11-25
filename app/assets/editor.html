@@ -8,6 +8,7 @@ h1{font-size:15px;margin:0;flex:1}
 button{background:#16233c;border:1px solid #2b3d63;color:#dbe8ff;border-radius:10px;padding:8px 10px;font-size:13px}
 button:active{background:#233457}
 #wrap{position:relative;height:calc(100vh - 52px);overflow:auto}
+#stage{transform-origin:0 0}
 canvas{display:block;background:#0a1020}
 #tip{position:fixed;left:10px;bottom:10px;font-size:11px;color:#7f92b3}
 </style></head><body>
@@ -18,15 +19,18 @@ canvas{display:block;background:#0a1020}
   <button id="bSharp">♯</button>
   <button id="bUndo">撤销</button>
   <button id="bSave">导出</button>
+  <button id="bZoomOut">−</button><button id="bZoomIn">＋</button><button id="bFit">适应</button>
   <button onclick="location.href='index.html'">返回</button>
   <input id="file" type="file" accept=".xml,.musicxml,.mxl" style="display:none">
 </header>
-<div id="wrap"><canvas id="cv"></canvas></div>
+<div id="wrap"><div id="stage"><canvas id="cv"></canvas></div></div>
+<div id="out" style="display:none;position:fixed;inset:0;background:rgba(2,4,10,.92);z-index:9;padding:12px;box-sizing:border-box"><div style="display:flex;gap:8px;margin-bottom:8px"><b style="flex:1">导出的 MusicXML</b><button id="bCopy">复制</button><button id="bCloseOut">关闭</button></div><textarea id="ta" style="width:100%;height:calc(100% - 44px);background:#0a1020;color:#cfe0ff;border:1px solid #22304d;border-radius:8px;padding:8px;font:12px monospace"></textarea></div>
 <div id="tip">点音符选中，♯/♭ 改音高；导出为 MusicXML（1/16 网格，模型直出）</div>
 <script src="musicxml.js"></script>
 <script>
 (function(){
-  var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+  var cv=document.getElementById('cv'), ctx=cv.getContext('2d'), stage=document.getElementById('stage');
+  var zoom=1; function applyZoom(){stage.style.transform='scale('+zoom+')';}
   var score=null, sel=null, undo=[], XPP=6, ROW=9, PAD=40, TICK=480;
   function midiName(m){var n=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][m%12];return n+(Math.floor(m/12)-1);}
   function draw(){
@@ -93,10 +97,22 @@ canvas{display:block;background:#0a1020}
       out.push('</measure>');
     }
     out.push('</part></score-partwise>');
-    var blob=new Blob([out.join('\n')],{type:'application/xml'}), a=document.createElement('a');
-    a.href=URL.createObjectURL(blob); a.download='edited.musicxml'; a.click();
-    setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+    var xml=out.join('\n');
+    document.getElementById('ta').value=xml;
+    document.getElementById('out').style.display='block';
+    try{var blob=new Blob([xml],{type:'application/xml'}), a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='edited.musicxml';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);}catch(e){}
   };
+  function setZoom(z){zoom=Math.max(0.4,Math.min(4,z));applyZoom();}
+  document.getElementById('bZoomIn').onclick=function(){setZoom(zoom*1.25);};
+  document.getElementById('bZoomOut').onclick=function(){setZoom(zoom/1.25);};
+  document.getElementById('bFit').onclick=function(){setZoom(1);};
+  var pinch=null;
+  cv.addEventListener('pointerdown',function(e){sel=hit(e);draw(); if(e.isPrimary) pinch=null;});
+  stage.addEventListener('touchstart',function(e){if(e.touches.length===2){var dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;pinch={d:Math.sqrt(dx*dx+dy*dy),z:zoom};e.preventDefault();}},{passive:false});
+  stage.addEventListener('touchmove',function(e){if(pinch&&e.touches.length===2){var dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;var d=Math.sqrt(dx*dx+dy*dy);setZoom(pinch.z*d/Math.max(1,pinch.d));e.preventDefault();}},{passive:false});
+  stage.addEventListener('touchend',function(){pinch=null;});
+  document.getElementById('bCloseOut').onclick=function(){document.getElementById('out').style.display='none';};
+  document.getElementById('bCopy').onclick=function(){var ta=document.getElementById('ta');ta.select();try{document.execCommand('copy');}catch(e){}if(navigator.clipboard){navigator.clipboard.writeText(ta.value);}alert('已复制（若无效请在文本框内长按选择复制）');};
   window.addEventListener('resize',draw); draw();
 })();
 </script></body></html>
