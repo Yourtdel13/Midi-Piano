@@ -2784,6 +2784,7 @@
         if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
           var rp = new FileReader(); rp.onload = function () { pdfToImages(rp.result); }; rp.readAsArrayBuffer(f); return;
         }
+        if (!/^image\//.test(f.type || '') && !/\.(png|jpe?g|webp|bmp)$/i.test(f.name)) { toast('不支持的格式：' + f.name); return; }
         var rd = new FileReader();
         rd.onload = function () {
           var im = new Image();
