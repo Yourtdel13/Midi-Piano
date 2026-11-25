@@ -628,7 +628,16 @@ body.tut-on #stage { visibility: hidden; }
 .opt.active { background: linear-gradient(150deg, rgba(76,201,240,.26), rgba(247,37,133,.18)); border-color: rgba(120,200,255,.5); box-shadow: 0 0 0 1px rgba(120,200,255,.18) inset; }
 #sheet { border: 1px solid rgba(120,170,255,.18); }
 .sheet-tab, .tab { border-radius: 10px; }
-#controls, #sheet, .sheet { background: linear-gradient(180deg, rgba(var(--gui-rgb), .92), rgba(var(--gui-rgb), .98)); }
+#controls, #sheet {
+  background: rgba(var(--gui-rgb), var(--gui-a));
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  backdrop-filter: blur(22px) saturate(1.25);
+}
+.home-inner {
+  background: rgba(var(--gui-rgb), calc(var(--gui-a) * 0.62));
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
 /* home polish */
 .home-inner { padding: 26px 22px; border-radius: 26px; background: linear-gradient(180deg, rgba(var(--gui-rgb), .42), rgba(var(--gui-rgb), .18)); border: 1px solid rgba(140,180,255,.14); box-shadow: 0 30px 90px rgba(0,0,0,.45); }
 .home-title { font-size: 50px; }

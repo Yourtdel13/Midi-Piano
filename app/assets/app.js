@@ -1018,6 +1018,7 @@
   }
 
   function applyLookUI() {
+    applyGui();
     var shapes = document.querySelectorAll('#shapeOpts .opt');
     for (var i = 0; i < shapes.length; i++) shapes[i].classList.toggle('active', shapes[i].getAttribute('data-shape') === state.look.shape);
     var fxs = document.querySelectorAll('#fxOpts .opt');
@@ -2741,6 +2742,7 @@
         }
         saveLook();
         applyLookUI();
+        applyGui();
       });
     }
     document.addEventListener('keydown', function (ev) {
