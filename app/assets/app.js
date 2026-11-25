@@ -21,7 +21,7 @@
     look: { bgBlur: 0, perfAuto: false, shape: 'capsule', fx: 'splash', gradient: 'random', pedal: true, topbar: true,
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
       leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true, collapsed: false,
-      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60,
+      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, guiAlpha: 72, guiColor: 'navy', lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60,
       score: { on: true, glow: true, color: 'white', pos: 20, size: 0.9, glowLevel: 1, bgAlpha: 0.72 } },
     freePlay: false, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
@@ -973,6 +973,8 @@
       if (o && typeof o.glowR === 'string' && (o.glowR === 'none' || GLOWS[o.glowR])) state.look.glowR = o.glowR;
       if (o && typeof o.glowLevel === 'number') state.look.glowLevel = Math.max(0, Math.min(3, Math.round(o.glowLevel)));
       if (o && typeof o.lineColor === 'string' && (o.lineColor === 'none' || GLOWS[o.lineColor])) state.look.lineColor = o.lineColor;
+      if (o && typeof o.guiAlpha === 'number') state.look.guiAlpha = Math.max(35, Math.min(100, Math.round(o.guiAlpha)));
+      if (o && typeof o.guiColor === 'string' && GUI_HEX[o.guiColor]) state.look.guiColor = o.guiColor;
       if (typeof o.linePower === 'number') state.look.linePower = Math.max(0, Math.min(3, Math.round(o.linePower)));
       if (typeof o.mistOn === 'boolean') state.look.mistOn = o.mistOn;
       if (typeof o.mistPower === 'number') state.look.mistPower = Math.max(0, Math.min(3, Math.round(o.mistPower)));
@@ -1008,6 +1010,13 @@
   function saveLook() {
     try { localStorage.setItem(LOOK_KEY, JSON.stringify(state.look)); } catch (e) { /* 无痕模式 */ }
   }
+  var GUI_HEX = { navy: '14,20,38', black: '8,10,16', purple: '30,18,54', teal: '10,36,44', pink: '44,18,36', gold: '40,32,16' };
+  function applyGui() {
+    var root = document.documentElement;
+    root.style.setProperty('--gui-rgb', GUI_HEX[state.look.guiColor] || GUI_HEX.navy);
+    root.style.setProperty('--gui-a', (state.look.guiAlpha / 100).toFixed(2));
+  }
+
   function applyLookUI() {
     var shapes = document.querySelectorAll('#shapeOpts .opt');
     for (var i = 0; i < shapes.length; i++) shapes[i].classList.toggle('active', shapes[i].getAttribute('data-shape') === state.look.shape);
@@ -1069,6 +1078,10 @@
     for (var gl = 0; gl < gll.length; gl++) gll[gl].classList.toggle('active', gll[gl].getAttribute('data-glowl') === state.look.glowL);
     var glr = document.querySelectorAll('#glowROpts .opt');
     for (var gr = 0; gr < glr.length; gr++) glr[gr].classList.toggle('active', glr[gr].getAttribute('data-glowr') === state.look.glowR);
+    var ga = $('guiAlpha');
+    if (ga) ga.value = String(state.look.guiAlpha | 0);
+    var gco = document.querySelectorAll('#guiColorOpts .opt');
+    for (var gci = 0; gci < gco.length; gci++) gco[gci].classList.toggle('active', gco[gci].getAttribute('data-guicolor') === state.look.guiColor);
     var gvl = $('glowLevel');
     if (gvl) gvl.value = String(state.look.glowLevel | 0);
     var gvv = $('glowLevelVal');
@@ -2712,6 +2725,8 @@
         if (b.hasAttribute('data-npr')) state.look.np.region = b.getAttribute('data-npr');
         if (b.hasAttribute('data-npc')) { var nside = b.getAttribute('data-side'); if (nside === 'l') state.look.np.lc = b.getAttribute('data-npc'); else state.look.np.rc = b.getAttribute('data-npc'); }
         if (b.hasAttribute('data-line')) state.look.lineColor = b.getAttribute('data-line');
+        if (b.hasAttribute('data-guicolor')) state.look.guiColor = b.getAttribute('data-guicolor');
+        if (b.hasAttribute('data-line')) applyGui();
         if (b.hasAttribute('data-mist')) state.look.mistColor = b.getAttribute('data-mist');
         if (b.hasAttribute('data-linelevel')) state.look.linePower = Math.max(0, Math.min(3, +b.getAttribute('data-linelevel') || 0));
         if (b.hasAttribute('data-miston')) state.look.mistOn = b.getAttribute('data-miston') === 'on';
@@ -2739,6 +2754,8 @@
       toast('已恢复默认设置');
       setTimeout(function () { location.reload(); }, 500);
     });
+    var gaEl = $('guiAlpha');
+    if (gaEl) gaEl.addEventListener('input', function () { state.look.guiAlpha = +this.value; applyGui(); saveLook(); });
     var adEl = $('ambDensity');
     if (adEl) {
       adEl.addEventListener('input', function () {
