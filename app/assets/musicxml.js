@@ -546,7 +546,22 @@
     var winRawL = rawX(winStart), winRawR = rawX(winEnd);
     var winRawW = Math.max(1, winRawR - winRawL);
     var fitScale = plotW / winRawW;
-    function xOf(tt) { return x0 + leftPad + (rawX(tt) - winRawL) * fitScale; }
+    var __dl = null;
+    try { __dl = layout(score, { width: plotW, size: s.size, start: winStart, end: winEnd }); } catch (e) { __dl = null; }
+    function xOf(tt) {
+      if (__dl && __dl.measures && __dl.measures.length) {
+        var mm2 = __dl.measures, lo2 = 0, hi2 = mm2.length - 1, idx2 = 0;
+        while (lo2 <= hi2) {
+          var mid2 = (lo2 + hi2) >> 1;
+          if (mm2[mid2].start <= tt + 0.001) { idx2 = mid2; lo2 = mid2 + 1; } else hi2 = mid2 - 1;
+        }
+        var m2 = mm2[idx2];
+        var f2 = m2.end > m2.start ? (tt - m2.start) / (m2.end - m2.start) : 0;
+        f2 = Math.max(-0.2, Math.min(1.2, f2));
+        return x0 + leftPad + m2.x + f2 * m2.w;
+      }
+      return x0 + leftPad + (rawX(tt) - winRawL) * fitScale;
+    }
     function xOfOld(tt) {
       if (!lPos.length) return x0 + leftPad + (tt - winStart) / Math.max(0.001, winEnd - winStart) * plotW;
       var lo1 = 0, hi1 = lPos.length - 1, idx1 = 0;
@@ -1127,6 +1142,26 @@
     var gap = Math.max(6, 8.2 * size);
     var sp = gap;
     var ms = score.measures || [];
+    if (opts.start != null && opts.end != null) {
+      var wms = [];
+      for (var wi = 0; wi < ms.length; wi++) {
+        if (ms[wi].end > opts.start + 0.001 && ms[wi].start < opts.end - 0.001) wms.push(ms[wi]);
+      }
+      ms = wms;
+      var tot2 = 0, durs = [];
+      for (var di = 0; di < ms.length; di++) {
+        var d0 = Math.max(0.01, Math.min(opts.end, ms[di].end) - Math.max(opts.start, ms[di].start));
+        durs.push(d0); tot2 += d0;
+      }
+      var xs = 0;
+      var pm = [];
+      for (var pi = 0; pi < ms.length; pi++) {
+        var ww = tot2 > 0 ? width * durs[pi] / tot2 : width / Math.max(1, ms.length);
+        pm.push({ index: pi, start: ms[pi].start, end: ms[pi].end, x: xs, w: ww });
+        xs += ww;
+      }
+      return { key: width + '|' + size + '|' + opts.start + '|' + opts.end, sp: sp, measures: pm, width: xs, size: size };
+    }
     var counts = [];
     var model = score.model;
     if (model && model.parts && model.parts[0]) {
