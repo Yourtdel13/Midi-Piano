@@ -1837,17 +1837,17 @@
     }
     if (line && line !== 'none' && GLOWS[line]) {
       var c = GLOWS[line];
-      var pw = state.look.linePower || 0, eh = 40 + pw * 34;
+      var pw = state.look.linePower || 0, eh = 72 + pw * 56;
       var eg = ctx.createLinearGradient(0, hitY - eh, 0, hitY + 2);
       eg.addColorStop(0, 'rgba(0,0,0,0)');
-      eg.addColorStop(0.55, hexToRgba(c, 0.09 + pw * 0.055));
-      eg.addColorStop(1, hexToRgba(c, 0.20 + pw * 0.09));
+      eg.addColorStop(0.5, hexToRgba(c, 0.14 + pw * 0.08));
+      eg.addColorStop(1, hexToRgba(c, 0.30 + pw * 0.13));
       ctx.fillStyle = eg; ctx.fillRect(0, hitY - eh, w, eh + 2);
       ctx.save();
       ctx.shadowColor = c;
-      ctx.shadowBlur = 18;
+      ctx.shadowBlur = 30;
       ctx.strokeStyle = c;
-      ctx.lineWidth = 2.4;
+      ctx.lineWidth = 3.2;
       ctx.beginPath();
       ctx.moveTo(0, hitY - 1);
       ctx.lineTo(w, hitY - 1);
@@ -2330,9 +2330,10 @@
   function openCrop(dataUrl) {
     var old = document.getElementById('cropOv'); if (old) old.remove();
     var ov = document.createElement('div'); ov.id = 'cropOv';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:70;background:#000;display:flex;flex-direction:column';
-    var cv = document.createElement('canvas'); cv.style.cssText = 'flex:1;width:100%;display:block;touch-action:none';
-    var bar = document.createElement('div'); bar.style.cssText = 'display:flex;gap:10px;padding:10px;background:#0b1120';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:70;background:#000';
+    var land0 = false;
+    var cv = document.createElement('canvas'); cv.style.cssText = 'position:absolute;left:0;right:0;top:0;bottom:76px;width:100%;display:block;touch-action:none';
+    var bar = document.createElement('div'); bar.style.cssText = 'position:absolute;left:0;right:0;bottom:0;height:76px;display:flex;gap:10px;padding:10px;box-sizing:border-box;background:#0b1120;z-index:71';
     var cancel = document.createElement('button'); cancel.textContent = '取消';
     var ok = document.createElement('button'); ok.textContent = '确定';
     [cancel, ok].forEach(function (b) { b.style.cssText = 'flex:1;padding:12px;border-radius:10px;border:1px solid #2c4468;background:#16233a;color:#dce9ff'; });
@@ -2347,7 +2348,10 @@
         var dw = img.width * base * scale, dh = img.height * base * scale;
         c.drawImage(img, (w - dw) / 2 + ox, (h - dh) / 2 + oy, dw, dh);
       }
-      var fw = w * 0.82, fh = fw * 16 / 9; if (fh > h * 0.82) { fh = h * 0.82; fw = fh * 9 / 16; }
+      land0 = w > h;
+      var fw, fh;
+      if (land0) { fh = h * 0.78; fw = fh * 16 / 9; if (fw > w * 0.86) { fw = w * 0.86; fh = fw * 9 / 16; } }
+      else { fw = w * 0.82; fh = fw * 16 / 9; if (fh > h * 0.82) { fh = h * 0.82; fw = fh * 9 / 16; } }
       var fx = (w - fw) / 2, fy = (h - fh) / 2;
       c.fillStyle = 'rgba(0,0,0,.58)';
       c.fillRect(0, 0, w, fy); c.fillRect(0, fy + fh, w, h - fy - fh);
@@ -2369,12 +2373,15 @@
       var base = Math.max(w / img.width, h / img.height);
       var dw = img.width * base * scale, dh = img.height * base * scale;
       var dx = (w - dw) / 2 + ox, dy = (h - dh) / 2 + oy;
-      var fw = w * 0.82, fh = fw * 16 / 9; if (fh > h * 0.82) { fh = h * 0.82; fw = fh * 9 / 16; }
+      land0 = w > h;
+      var fw, fh;
+      if (land0) { fh = h * 0.78; fw = fh * 16 / 9; if (fw > w * 0.86) { fw = w * 0.86; fh = fw * 9 / 16; } }
+      else { fw = w * 0.82; fh = fw * 16 / 9; if (fh > h * 0.82) { fh = h * 0.82; fw = fh * 9 / 16; } }
       var fx = (w - fw) / 2, fy = (h - fh) / 2;
-      var out = document.createElement('canvas'); out.width = 720; out.height = 1280;
+      var out = document.createElement('canvas'); out.width = land0 ? 1280 : 720; out.height = land0 ? 720 : 1280;
       var sx = (fx - dx) / (dw / img.width), sy = (fy - dy) / (dh / img.height);
       var sw = fw / (dw / img.width), sh = fh / (dh / img.height);
-      out.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, 720, 1280);
+      out.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, out.width, out.height);
       var url = out.toDataURL('image/jpeg', 0.85);
       var im2 = new Image();
       im2.onload = function () {
@@ -2524,22 +2531,35 @@
   function showBgMenu() {
     var old = document.getElementById('bgMenu'); if (old) old.remove();
     var ov = document.createElement('div'); ov.id = 'bgMenu';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(2,4,10,.82);display:flex;align-items:center;justify-content:center;padding:18px';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(2,4,10,.86);display:flex;align-items:center;justify-content:center;padding:14px';
     var box = document.createElement('div');
-    box.style.cssText = 'width:min(460px,94vw);max-height:80vh;overflow:auto;background:#0d1526;border:1px solid #263a5c;border-radius:18px;padding:16px;color:#e6efff';
-    var html = '<div style="font-size:15px;font-weight:700;margin-bottom:10px">背景</div>' +
-      '<button id="bgUseSys" style="width:100%;padding:12px;margin-bottom:8px;border-radius:12px;border:1px solid #2c4468;background:#16233a;color:#dce9ff">使用系统背景</button>' +
-      '<button id="bgUseFile" style="width:100%;padding:12px;margin-bottom:12px;border-radius:12px;border:1px solid #2c4468;background:#16233a;color:#dce9ff">导入图片</button>' +
-      '<div id="bgSysList" style="display:none;grid-template-columns:repeat(3,1fr);gap:8px">';
-    for (var i = 0; i < SYS_BGS.length; i++) html += '<button data-sys="' + SYS_BGS[i].id + '" style="padding:14px 6px;border-radius:12px;border:1px solid #2c4468;background:#101b2f;color:#cfe0ff;font-size:12px">' + SYS_BGS[i].name + '</button>';
-    html += '</div><button id="bgClose" style="width:100%;margin-top:12px;padding:10px;border-radius:12px;border:1px solid #2c4468;background:#0e1727;color:#9fb4d8">取消</button>';
+    box.style.cssText = 'width:min(520px,96vw);max-height:86vh;overflow:auto;background:#0d1526;border:1px solid #263a5c;border-radius:18px;padding:14px;color:#e6efff;box-sizing:border-box';
+    var cats = [{ id: 'pure', name: '纯色' }, { id: 'sakura', name: '樱花' }, { id: 'anime', name: '二次元' }];
+    var html = '<div style="font-size:15px;font-weight:700;margin-bottom:10px">背景</div><div style="display:flex;gap:8px;margin-bottom:10px">';
+    for (var ci = 0; ci < cats.length; ci++) html += '<button data-cat="' + cats[ci].id + '" class="bgTab" style="flex:1;padding:9px;border-radius:10px;border:1px solid #2c4468;background:#101b2f;color:#cfe0ff;font-size:12px">' + cats[ci].name + '</button>';
+    html += '</div><div id="bgGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
+    for (var i = 0; i < SYS_BGS.length; i++) {
+      var it = SYS_BGS[i], cat = it.img ? (it.id.charAt(0) === 'a' ? 'anime' : 'sakura') : 'pure';
+      var bg = it.img ? 'background-image:url(' + it.img + ');background-size:cover;background-position:center' : 'background:' + (it.id === 'black' ? '#000' : '#3a3a3a');
+      html += '<button data-sys="' + it.id + '" data-cat="' + cat + '" style="position:relative;height:78px;border-radius:10px;border:1px solid #2c4468;overflow:hidden;padding:0;' + bg + '"><span style="position:absolute;left:0;right:0;bottom:0;padding:3px;font-size:11px;color:#fff;background:rgba(0,0,0,.55)">' + it.name + '</span></button>';
+    }
+    html += '</div><div style="display:flex;gap:8px;margin-top:12px"><button id="bgUseFile" style="flex:1;padding:11px;border-radius:11px;border:1px solid #2c4468;background:#16233a;color:#dce9ff">导入图片</button><button id="bgClose" style="flex:1;padding:11px;border-radius:11px;border:1px solid #2c4468;background:#0e1727;color:#9fb4d8">取消</button></div>';
     box.innerHTML = html; ov.appendChild(box); document.body.appendChild(ov);
-    ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
-    document.getElementById('bgUseSys').onclick = function () { var l = document.getElementById('bgSysList'); l.style.display = l.style.display === 'grid' ? 'none' : 'grid'; };
+    var items = box.querySelectorAll('[data-sys]');
+    var tabs = box.querySelectorAll('.bgTab');
+    function filter(cat) {
+      for (var k = 0; k < items.length; k++) items[k].style.display = (items[k].getAttribute('data-cat') === cat) ? 'block' : 'none';
+      for (var t = 0; t < tabs.length; t++) {
+        var on = tabs[t].getAttribute('data-cat') === cat;
+        tabs[t].style.background = on ? '#24385c' : '#101b2f';
+        tabs[t].style.borderColor = on ? '#5b8bd6' : '#2c4468';
+      }
+    }
+    for (var t2 = 0; t2 < tabs.length; t2++) tabs[t2].onclick = function () { filter(this.getAttribute('data-cat')); };
+    for (var q = 0; q < items.length; q++) items[q].onclick = function () { applySystemBg(this.getAttribute('data-sys')); ov.remove(); };
     document.getElementById('bgUseFile').onclick = function () { ov.remove(); $('bgFile').click(); };
     document.getElementById('bgClose').onclick = function () { ov.remove(); };
-    var btns = box.querySelectorAll('[data-sys]');
-    for (var b = 0; b < btns.length; b++) btns[b].onclick = function () { applySystemBg(this.getAttribute('data-sys')); ov.remove(); };
+    filter('pure');
   }
 
   function restoreBackground() {
@@ -2861,7 +2881,7 @@
         if (pids.length < 2) return;
         var qa = g.pointers[pids[0]], qb = g.pointers[pids[1]];
         var ddx2 = Math.abs(qa.x - qb.x) || 1, ddy2 = Math.abs(qa.y - qb.y) || 1;
-        state.view.vzoom = Math.max(0.45, Math.min(2.6, g.startVzoom * ddy2 / g.startDy));
+        state.view.vzoom = Math.max(0.45, Math.min(5, g.startVzoom * ddy2 / g.startDy));
         if (state.freePlay && state.look.freeMove) {
           var rzz = ddx2 / g.startDx;
           if (Math.abs(rzz - 1) > 0.02) state.view.zoom = Math.max(1, Math.min(3, g.startZoom * rzz));
@@ -2878,7 +2898,7 @@
         var ddx = Math.abs(a.x - b.x) || 1, ddy = Math.abs(a.y - b.y) || 1;
         var rz = ddx / g.startDx, rv = ddy / g.startDy;
         if (Math.abs(rv - 1) > Math.abs(rz - 1)) {
-          state.view.vzoom = Math.max(0.45, Math.min(2.6, g.startVzoom * rv));
+          state.view.vzoom = Math.max(0.45, Math.min(5, g.startVzoom * rv));
         } else {
           state.view.zoom = Math.max(1, Math.min(3, g.startZoom * rz));
           state.view.pan = g.startPan - ((a.x + b.x) / 2 - g.startMid);
