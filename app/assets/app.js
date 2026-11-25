@@ -665,7 +665,8 @@
 
   // 音符下落时持续撒出小火花（拖尾）
   function emitNoteTrails(t, dt) {
-    var pps = state.pxPerSec * state.speed * (state.view.vzoom || 1);
+    var vz = state.view.vzoom || 1; if (!isFinite(vz) || vz <= 0) vz = 1;
+    var pps = state.pxPerSec * state.speed * vz;
     var start = lowerBound(state.notes, t - 1.0);
     var ps = state.particles;
     var np = state.look.np || {};
@@ -909,6 +910,8 @@
   }
 
   function noteGradient(n, top, bottom) {
+    if (!isFinite(top)) top = 0;
+    if (!isFinite(bottom)) bottom = top + 1;
     var g = ctx.createLinearGradient(0, top, 0, Math.max(bottom, top + 1));
     if (state.look.gradient === 'hands') {
       var hh = handTheme(handOf(n));
@@ -1574,7 +1577,8 @@
   function drawNotes(t) {
     var w = window.innerWidth;
     var hitY = state.hitY;
-    var pps = state.pxPerSec * state.speed * (state.view.vzoom || 1);
+    var vz = state.view.vzoom || 1; if (!isFinite(vz) || vz <= 0) vz = 1;
+    var pps = state.pxPerSec * state.speed * vz;
     var windowSec = hitY / pps + 0.2;
     var notes = state.notes;
     var i = lowerBound(notes, t - 12);
@@ -1795,7 +1799,8 @@
     var whiteW = w / 52;
     var pressed = {};
     var i, n;
-    var pps = state.pxPerSec * state.speed * (state.view.vzoom || 1);
+    var vz = state.view.vzoom || 1; if (!isFinite(vz) || vz <= 0) vz = 1;
+    var pps = state.pxPerSec * state.speed * vz;
     var windowSec = hitY / pps + 0.2;
     var start = lowerBound(state.notes, t - 12);
     for (i = start; i < state.notes.length; i++) {
