@@ -21,9 +21,9 @@
     look: { bgBlur: 0, perfAuto: false, shape: 'capsule', fx: 'splash', gradient: 'random', pedal: true, topbar: true,
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
       leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true, collapsed: false,
-      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, guiAlpha: 72, guiColor: 'navy', lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60,
+      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, guiAlpha: 72, guiColor: 'navy', lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60, ext: { on: false, lines: 4, alpha: 85 },
       score: { on: true, glow: true, color: 'white', pos: 20, size: 0.9, glowLevel: 1, bgAlpha: 0.72 } },
-    freePlay: false, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
+    freePlay: false, ext: { imgs: [] }, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
     fps: 0, fpsAcc: 0, fpsFrames: 0, dbgAcc: 0,
     prevT: 0, spawnCursor: 0, schedIndex: 0,
@@ -978,6 +978,11 @@
       if (o && typeof o.lineColor === 'string' && (o.lineColor === 'none' || GLOWS[o.lineColor])) state.look.lineColor = o.lineColor;
       if (o && typeof o.guiAlpha === 'number') state.look.guiAlpha = Math.max(35, Math.min(100, Math.round(o.guiAlpha)));
       if (o && typeof o.guiColor === 'string' && GUI_HEX[o.guiColor]) state.look.guiColor = o.guiColor;
+      if (o && o.ext && typeof o.ext === 'object') {
+        if (typeof o.ext.on === 'boolean') state.look.ext.on = o.ext.on;
+        if (typeof o.ext.lines === 'number') state.look.ext.lines = Math.max(1, Math.min(8, Math.round(o.ext.lines)));
+        if (typeof o.ext.alpha === 'number') state.look.ext.alpha = Math.max(20, Math.min(100, Math.round(o.ext.alpha)));
+      }
       if (typeof o.linePower === 'number') state.look.linePower = Math.max(0, Math.min(3, Math.round(o.linePower)));
       if (typeof o.mistOn === 'boolean') state.look.mistOn = o.mistOn;
       if (typeof o.mistPower === 'number') state.look.mistPower = Math.max(0, Math.min(3, Math.round(o.mistPower)));
@@ -1121,6 +1126,12 @@
     for (var gl = 0; gl < gll.length; gl++) gll[gl].classList.toggle('active', gll[gl].getAttribute('data-glowl') === state.look.glowL);
     var glr = document.querySelectorAll('#glowROpts .opt');
     for (var gr = 0; gr < glr.length; gr++) glr[gr].classList.toggle('active', glr[gr].getAttribute('data-glowr') === state.look.glowR);
+    var exOn = document.querySelectorAll('#extOnOpts .opt');
+    for (var eo = 0; eo < exOn.length; eo++) exOn[eo].classList.toggle('active', (exOn[eo].getAttribute('data-ext') === 'on') === !!state.look.ext.on);
+    var exL = $('extLines'); if (exL) exL.value = String(state.look.ext.lines);
+    var exLv = $('extLinesVal'); if (exLv) exLv.textContent = String(state.look.ext.lines);
+    var exA = $('extAlpha'); if (exA) exA.value = String(state.look.ext.alpha);
+    var exAv = $('extAlphaVal'); if (exAv) exAv.textContent = state.look.ext.alpha + '%';
     var ga = $('guiAlpha');
     if (ga) ga.value = String(state.look.guiAlpha | 0);
     var gco = document.querySelectorAll('#guiColorOpts .opt');
@@ -1924,7 +1935,35 @@
   var SCORE_COLORS = { white: '#ffffff', gold: '#ffcf5c', blue: '#7fb6ff', teal: '#5ce6d8', purple: '#b98bff',
     pink: '#ff8fc4', red: '#ff6b7a', green: '#5ee08a', orange: '#ff9a3d', rose: '#ff9fc0' };
   var scoreBuf = null, scoreBufCtx = null, scoreBufAt = 0, scoreBufKey = '';
+  function drawExternalScore(t) {
+    var ex = state.look.ext || {}; var imgs = state.ext.imgs || [];
+    if (!imgs.length) return;
+    var vw = window.innerWidth, x = 4, y = (state.look.score.pos || 20), w = vw - 8, h = 160 * (state.look.score.size || 0.9);
+    var dur = Math.max(0.1, state.duration || 1);
+    var lines = Math.max(1, state.ext.lines | 0), total = imgs.length * lines;
+    var line = Math.min(total - 1, Math.max(0, Math.floor((t / dur) * total)));
+    var page = Math.min(imgs.length - 1, Math.floor(line / lines)), within = line % lines;
+    var img = imgs[page]; if (!img || !img.width) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    ctx.globalAlpha = (state.ext.alpha || 85) / 100;
+    var sc = w / img.width, dh = img.height * sc;
+    var rowH = dh / lines;
+    var off = y + h / 2 - (within + 0.5) * rowH;
+    ctx.fillStyle = 'rgba(3,5,12,.72)'; ctx.fillRect(x, y, w, h);
+    ctx.drawImage(img, x, off, w, dh);
+    ctx.globalAlpha = 1;
+    var hy = off + within * rowH;
+    ctx.fillStyle = 'rgba(88,200,255,.16)'; ctx.fillRect(x, hy, w, rowH);
+    ctx.strokeStyle = 'rgba(120,220,255,.85)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(x, hy); ctx.lineTo(x + w, hy); ctx.stroke();
+    ctx.fillStyle = 'rgba(160,220,255,.9)'; ctx.font = '11px system-ui';
+    ctx.fillText('第 ' + (line + 1) + ' / ' + total + ' 行 · 第 ' + (page + 1) + ' 页', x + 6, y + h - 6);
+    ctx.restore();
+  }
+
   function drawScoreOverlay(t) {
+    if (state.look.ext && state.look.ext.on && state.ext.imgs && state.ext.imgs.length) { drawExternalScore(t); return; }
     if (!state.score || !state.look.score.on || !window.MusicXML) return;
     var s = state.look.score;
     var vw = window.innerWidth, vh = window.innerHeight;
@@ -2709,6 +2748,26 @@
   }
 
   function bindUI() {
+    var exI = $('extImport'), exF = $('extFile');
+    if (exI && exF) exI.addEventListener('click', function () { exF.click(); });
+    if (exF) exF.addEventListener('change', function () {
+      var fs = Array.prototype.slice.call(this.files || []);
+      var left = fs.length;
+      if (!left) return;
+      fs.forEach(function (f) {
+        var rd = new FileReader();
+        rd.onload = function () {
+          var im = new Image();
+          im.onload = function () { state.ext.imgs.push(im); if (--left === 0) { toast('已导入 ' + state.ext.imgs.length + ' 张谱面'); draw(); } };
+          im.src = rd.result;
+        };
+        rd.readAsDataURL(f);
+      });
+      this.value = '';
+    });
+    var exC = $('extClear'); if (exC) exC.addEventListener('click', function () { state.ext.imgs.length = 0; toast('已清除谱面图片'); draw(); });
+    var exLs = $('extLines'); if (exLs) exLs.addEventListener('input', function () { state.look.ext.lines = Math.max(1, Math.min(8, +this.value || 4)); var v = $('extLinesVal'); if (v) v.textContent = String(state.look.ext.lines); saveLook(); draw(); });
+    var exAs = $('extAlpha'); if (exAs) exAs.addEventListener('input', function () { state.look.ext.alpha = Math.max(20, Math.min(100, +this.value || 85)); var v = $('extAlphaVal'); if (v) v.textContent = state.look.ext.alpha + '%'; saveLook(); draw(); });
     var lg = $('logExport'); if (lg) lg.addEventListener('click', exportLog);
     $('btnMidi').addEventListener('click', function () { $('midiFile').click(); });
     $('btnBg').addEventListener('click', function () { showBgMenu(); });
@@ -2785,6 +2844,7 @@
         if (b.hasAttribute('data-npc')) { var nside = b.getAttribute('data-side'); if (nside === 'l') state.look.np.lc = b.getAttribute('data-npc'); else state.look.np.rc = b.getAttribute('data-npc'); }
         if (b.hasAttribute('data-line')) state.look.lineColor = b.getAttribute('data-line');
         if (b.hasAttribute('data-guicolor')) state.look.guiColor = b.getAttribute('data-guicolor');
+        if (b.hasAttribute('data-ext')) state.look.ext.on = b.getAttribute('data-ext') === 'on';
         if (b.hasAttribute('data-line')) applyGui();
         if (b.hasAttribute('data-mist')) state.look.mistColor = b.getAttribute('data-mist');
         if (b.hasAttribute('data-linelevel')) state.look.linePower = Math.max(0, Math.min(3, +b.getAttribute('data-linelevel') || 0));

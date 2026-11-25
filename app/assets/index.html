@@ -60,7 +60,7 @@
         <span class="hb-txt"><b>退出</b><em>关闭应用</em></span>
       </button>
     </div>
-    <div class="home-foot">DSH · v3.49</div>
+    <div class="home-foot">DSH · v3.50</div>
   </div>
 </div>
 
@@ -114,6 +114,7 @@
     <button class="tab" data-tab="fx" role="tab">特效类</button>
     <button class="tab" data-tab="func" role="tab">功能类</button>
     <button class="tab" data-tab="debug" role="tab">调试类</button>
+    <button class="tab" data-tab="exp" role="tab">实验</button>
   </div>
 
   <div class="sheet-pane" data-pane="shape">
@@ -291,6 +292,23 @@
     </div>
   </div>
 
+  <div class="sheet-pane" data-pane="exp">
+    <div class="sheet-label">外部谱面（实验性）<span class="sub">导入 MuseScore 导出的谱面图片，按行高亮</span></div>
+    <div class="opt-row" id="extOnOpts">
+      <button class="opt" data-ext="on">开</button>
+      <button class="opt" data-ext="off">关</button>
+    </div>
+    <div class="sheet-label">谱面图片</div>
+    <div class="opt-row"><button class="opt" id="extImport" style="grid-column:1/-1">导入图片（可多选）</button></div>
+    <div class="opt-row"><button class="opt" id="extClear" style="grid-column:1/-1">清除图片</button></div>
+    <div class="sheet-label">每页行数 <span id="extLinesVal" class="sub">4</span></div>
+    <input id="extLines" class="amb-range" type="range" min="1" max="8" step="1" value="4">
+    <div class="sheet-label">谱面透明度 <span id="extAlphaVal" class="sub">85%</span></div>
+    <input id="extAlpha" class="amb-range" type="range" min="20" max="100" step="1" value="85">
+    <div class="sheet-label">说明</div>
+    <div style="font-size:12px;color:#8fa2c4;line-height:1.6">按播放进度在总行数中取当前行；每页行数用于换算页内位置。图片不持久化，重启需重新导入。</div>
+  </div>
+
   <div class="sheet-pane" data-pane="debug">
     <div class="sheet-label">小节线</div>
     <div class="opt-row" id="barOpts">
@@ -346,6 +364,7 @@
 
 <input id="midiFile" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
 <input id="bgFile" type="file" accept="image/*" hidden>
+<input id="extFile" type="file" accept="image/*" multiple hidden>
         <input id="scoreFile" type="file" accept=".xml,.musicxml,.mxl,application/xml" hidden>
 
 <script src="demo.js?v=22"></script>
