@@ -674,10 +674,6 @@ body.chrome-off #btnLook, body.chrome-off #topOpen, body.chrome-off #controls, b
   background: radial-gradient(ellipse at center, rgba(255,120,30,.55), rgba(255,60,0,.18) 55%, transparent 75%); filter: blur(8px);
   animation: fxFlame 1.1s ease-in-out infinite alternate; }
 @keyframes fxFlame { from { transform: scaleY(.85) translateY(4px); opacity: .65; } to { transform: scaleY(1.15) translateY(-4px); opacity: 1; } }
-#recTitleWrap[data-fx="prism"]::before { content: ''; position: absolute; width: 56vw; height: 56vw; border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(120,200,255,.35), rgba(247,37,133,.3), rgba(255,209,102,.3), rgba(76,201,240,.35), rgba(120,200,255,.35));
-  filter: blur(14px); animation: fxPrism 8s linear infinite; z-index: -1; }
-@keyframes fxPrism { to { transform: rotate(360deg); } }
 #recTitleWrap[data-fx="neon"] #recTitle { animation: rtClassic 3s ease forwards, fxNeon 1.2s ease-in-out infinite alternate; }
 @keyframes fxNeon { from { text-shadow: 0 0 10px #4cc9f0, 0 0 24px #f72585; } to { text-shadow: 0 0 22px #4cc9f0, 0 0 46px #f72585; } }
 #recTitleWrap[data-fx="ink"]::before { content: ''; position: absolute; width: 40vw; height: 40vw; border-radius: 50%;
