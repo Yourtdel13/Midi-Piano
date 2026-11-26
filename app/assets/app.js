@@ -331,10 +331,12 @@
     var c = cv.getContext('2d'); c.scale(dpr, dpr);
     var t0 = performance.now(), ash = [], shards = [], wind = [], broken = false;
     var lineEls = tw ? tw.querySelectorAll('.rt-line') : [], lines = [];
-    for (var le = 0; le < lineEls.length; le++) {
-      var lb0 = lineEls[le].getBoundingClientRect();
-      lines.push({ x: lb0.left, y: lb0.top, w: lb0.width, h: Math.max(2, lb0.height) });
-      if (fx === 'swords') lineEls[le].style.opacity = '0';
+    function measureLines() {
+      lines = [];
+      for (var le = 0; le < lineEls.length; le++) {
+        var b0 = lineEls[le].getBoundingClientRect();
+        lines.push({ x: b0.left, y: b0.top, w: b0.width, h: Math.max(2, b0.height) });
+      }
     }
     var strokes = [], debris = [], redDone = false;
     var DUR = fx === 'swords' ? 4.6 : 3.25;
@@ -362,9 +364,9 @@
           var e0 = order[si0], A0 = pts[e0[0]], B0 = pts[e0[1]], pr0 = Math.max(0, Math.min(1, (t - (0.04 + si0 * 0.15)) / 0.14));
           if (pr0 > 0) {
             var ex0 = A0.x + (B0.x - A0.x) * pr0, ey0 = A0.y + (B0.y - A0.y) * pr0;
-            c.save(); c.globalAlpha = dim * .85; c.shadowColor = '#7fdcff'; c.shadowBlur = 44; c.strokeStyle = 'rgba(130,220,255,.75)'; c.lineWidth = 7; c.lineCap = 'round';
+            c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = dim; c.shadowColor = '#8fe4ff'; c.shadowBlur = 60; c.strokeStyle = 'rgba(150,230,255,.95)'; c.lineWidth = 8; c.lineCap = 'round';
             c.beginPath(); c.moveTo(A0.x, A0.y); c.lineTo(ex0, ey0); c.stroke();
-            c.globalAlpha = dim; c.shadowColor = '#ffffff'; c.shadowBlur = 24; c.strokeStyle = '#ffffff'; c.lineWidth = 2.6;
+            c.globalCompositeOperation = 'source-over'; c.globalAlpha = dim; c.shadowColor = '#ffffff'; c.shadowBlur = 30; c.strokeStyle = '#ffffff'; c.lineWidth = 3;
             c.beginPath(); c.moveTo(A0.x, A0.y); c.lineTo(ex0, ey0); c.stroke();
             c.fillStyle = '#fff'; c.shadowColor = '#fff'; c.shadowBlur = 30; c.beginPath(); c.arc(ex0, ey0, 2.8, 0, 7); c.fill(); c.restore();
           }
@@ -373,9 +375,9 @@
         var mp0 = Math.max(0, Math.min(1, (t - 1.7) / 0.15));
         if (mp0 > 0) {
           var mx0 = midA.x + (midB.x - midA.x) * mp0;
-          c.save(); c.globalAlpha = dim * .8; c.shadowColor = '#ffd9dc'; c.shadowBlur = 50; c.strokeStyle = 'rgba(255,190,200,.8)'; c.lineWidth = 10; c.lineCap = 'round';
+          c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = dim; c.shadowColor = '#ff9aa6'; c.shadowBlur = 64; c.strokeStyle = 'rgba(255,200,210,.95)'; c.lineWidth = 12; c.lineCap = 'round';
           c.beginPath(); c.moveTo(midA.x, midA.y); c.lineTo(mx0, midB.y); c.stroke();
-          c.globalAlpha = dim; c.shadowColor = '#ffffff'; c.shadowBlur = 30; c.strokeStyle = '#ffffff'; c.lineWidth = 3.2;
+          c.globalCompositeOperation = 'source-over'; c.globalAlpha = dim; c.shadowColor = '#ffffff'; c.shadowBlur = 34; c.strokeStyle = '#ffffff'; c.lineWidth = 3.6;
           c.beginPath(); c.moveTo(midA.x, midA.y); c.lineTo(mx0, midB.y); c.stroke(); c.restore();
         }
         if (t > 2.6 && dim > 0) {
@@ -391,6 +393,8 @@
         }
         if (t >= 2.3 && !broken) {
           broken = true;
+          measureLines();
+          for (var lh = 0; lh < lineEls.length; lh++) lineEls[lh].style.opacity = '0';
           for (var s9 = 0; s9 < 6; s9++) { var e9 = order[s9], A9 = pts[e9[0]], B9 = pts[e9[1]]; for (var w9 = 0; w9 < 10; w9++) wind.push({ x: A9.x + (B9.x - A9.x) * Math.random(), y: A9.y + (B9.y - A9.y) * Math.random(), vx: rnd(-560, 560), vy: rnd(-260, 260), life: 0.6 }); }
           for (var lb = 0; lb < lines.length; lb++) {
             var LB = lines[lb], cuts = [];
