@@ -328,22 +328,22 @@
     if (!black) { cb(); return; }
     state.introActive = true;
     chromeHide();
-    black.style.transitionDuration = Math.max(0.3, rec.fade) + 's';
+    black.style.transitionDuration = '0.5s';
     black.classList.add('show');
+    function reveal() {
+      black.classList.add('fadeout');
+      try { cb(true); } catch (e) { }
+      setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; }, 1100);
+    }
     setTimeout(function () {
       if (rec.title && tt && tw) {
         var name = state.title || 'MIDI 钢琴';
         tt.textContent = name;
         tt.className = rec.style || 'classic';
         tw.classList.add('show');
-        setTimeout(function () {
-          tw.classList.remove('show');
-          black.classList.add('fadeout');
-          setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; cb(true); }, 900);
-        }, 3000);
+        setTimeout(function () { tw.classList.remove('show'); reveal(); }, 3000);
       } else {
-        black.classList.add('fadeout');
-        setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; cb(true); }, Math.max(300, rec.fade * 1000));
+        reveal();
       }
     }, Math.max(300, rec.fade * 1000));
   }

@@ -656,7 +656,7 @@ body.chrome-off #btnLook, body.chrome-off #topOpen, body.chrome-off #controls, b
 .sec-box > .sec-head { font-size: 12px; color: #9fc4ff; letter-spacing: .04em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 .sec-box > .sec-head::before { content: ''; width: 6px; height: 6px; border-radius: 2px; background: var(--accent); display: inline-block; }
 /* recording intro */
-#recBlack { position: fixed; inset: 0; background: rgba(0,0,0,.90); z-index: 90; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
+#recBlack { position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 90; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
 #recBlack.show { opacity: 1; }
 #recBlack.fadeout { opacity: 0; }
 #recTitleWrap { position: fixed; left: 0; right: 0; top: 42%; z-index: 91; display: none; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
