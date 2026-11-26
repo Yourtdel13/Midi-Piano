@@ -330,7 +330,7 @@
     cv.width = W * dpr; cv.height = H * dpr;
     var c = cv.getContext('2d'); c.scale(dpr, dpr);
     var t0 = performance.now(), ash = [], shards = [], wind = [], broken = false;
-    var lineEls = tw ? tw.querySelectorAll('.rt-line') : [], lines = [], prismBase = null, spotsP = [], fanCv = null, fanR = 0;
+    var lineEls = tw ? tw.querySelectorAll('.rt-line') : [], lines = [], prismBase = null, spotsP = [], fanCv = null, fanR = 0, gh1 = null, gh2 = null;
     function measureLines() {
       lines = [];
       for (var le = 0; le < lineEls.length; le++) {
@@ -432,57 +432,62 @@
       } else if (fx === 'prism') {
         if (!prismBase) prismBase = tt.getBoundingClientRect();
         var pb = prismBase, pcx = pb.left + pb.width / 2, pcy = pb.top + pb.height / 2;
+        if (!gh1 && tw) {
+          gh1 = document.createElement('div'); gh1.className = 'rt-ghost'; gh1.style.color = '#7fe9ff'; gh1.textContent = tt.textContent;
+          gh2 = document.createElement('div'); gh2.className = 'rt-ghost'; gh2.style.color = '#ff7fd0'; gh2.textContent = tt.textContent;
+          tw.appendChild(gh1); tw.appendChild(gh2);
+        }
         if (t < 0.1) tt.style.opacity = '1';
         var easeP = function (x) { return 1 - Math.pow(1 - x, 3); };
-        var kk = 3;
-        var slideOff = 0;
-        if (t < 0.9) {
-          var ph = easeP(Math.min(1, t / 0.8)), dx = (1 - ph) * Math.min(W * 0.7, 760);
+        var kk = 3, slideOff = 0;
+        if (t < 0.95) {
+          var ph = easeP(Math.min(1, t / 0.85)), dx = (1 - ph) * Math.min(W * 0.7, 760);
           tt.style.transform = 'translateX(' + dx + 'px) skewX(' + ((1 - ph) * -8) + 'deg)';
           tt.style.filter = 'blur(' + ((1 - ph) * 1.2) + 'px)';
           kk = Math.max(2, (1 - ph) * 8);
+          if (gh1) {
+            gh1.style.opacity = (1 - ph) * 0.55; gh2.style.opacity = (1 - ph) * 0.35;
+            gh1.style.transform = 'translate(-50%,-50%) translateX(' + (dx + 26) + 'px) skewX(' + ((1 - ph) * -8) + 'deg)';
+            gh2.style.transform = 'translate(-50%,-50%) translateX(' + (dx + 60) + 'px) skewX(' + ((1 - ph) * -8) + 'deg)';
+          }
         } else if (t < 2.55) {
           tt.style.transform = 'translateX(0) scale(' + (1.02 + 0.012 * Math.sin(t * 9)) + ')'; tt.style.filter = 'none'; kk = 3;
+          if (gh1) { gh1.style.opacity = 0; gh2.style.opacity = 0; }
         } else if (t < 3.4) {
           var q = Math.min(1, (t - 2.55) / 0.85); slideOff = -q * Math.min(W * 0.75, 820);
           tt.style.transform = 'translateX(' + slideOff + 'px) scaleX(' + (1 + q * 0.12) + ') skewX(' + (-q * 9) + 'deg)';
           kk = 3 + q * 7;
+          if (gh1) { gh1.style.opacity = 0; gh2.style.opacity = 0; }
         } else if (t < 3.52) {
           slideOff = -Math.min(W * 0.75, 820);
           tt.style.transform = 'translateX(' + slideOff + 'px) scaleX(0.05)'; tt.style.opacity = '0';
         } else { slideOff = -Math.min(W * 0.75, 820); }
-        // 七色漏斗预渲染成一张图，旋转只做 drawImage
+        // 一束一束生成七色光，每 0.2s 一束
+        var cols7 = ['#ff3b3b', '#ff9f1c', '#ffe066', '#4ade80', '#22d3ee', '#3b82f6', '#a855f7'];
         var R = Math.min(W, H) * 0.62;
-        if (!fanCv) {
-          var dprF = Math.min(1.6, window.devicePixelRatio || 1);
-          fanCv = document.createElement('canvas'); fanCv.width = R * 2 * dprF; fanCv.height = R * 2 * dprF;
-          var fg = fanCv.getContext('2d'); fg.scale(dprF, dprF); fg.globalCompositeOperation = 'lighter';
-          var cols7 = ['#ff3b3b', '#ff9f1c', '#ffe066', '#4ade80', '#22d3ee', '#3b82f6', '#a855f7'];
-          for (var ci = 0; ci < 7; ci++) {
-            var a0 = ci * (Math.PI * 2 / 7), half = (Math.PI / 7) * 0.56;
-            var rgc = fg.createRadialGradient(R, R, 4, R, R, R);
-            rgc.addColorStop(0, 'rgba(255,255,255,.9)'); rgc.addColorStop(.22, cols7[ci]); rgc.addColorStop(1, 'rgba(0,0,0,0)');
-            fg.globalAlpha = 0.5; fg.fillStyle = rgc;
-            fg.beginPath(); fg.moveTo(R, R); fg.arc(R, R, R, a0 - half, a0 + half); fg.closePath(); fg.fill();
-          }
-          var wg = fg.createRadialGradient(R, R, 0, R, R, R * 0.32);
-          wg.addColorStop(0, 'rgba(255,255,255,.85)'); wg.addColorStop(1, 'rgba(255,255,255,0)');
-          fg.globalAlpha = 1; fg.fillStyle = wg; fg.beginPath(); fg.arc(R, R, R * 0.32, 0, 7); fg.fill();
-          fanR = R;
-        }
-        var burst = Math.min(1, Math.max(0, (t - 0.55) / 0.5));
-        var fade = t > 2.9 ? Math.max(0, 1 - (t - 2.9) / 0.62) : 1;
-        var rot = t > 2.55 ? (t - 2.55) * 2.4 : 0;
+        var fade = t > 3.05 ? Math.max(0, 1 - (t - 3.05) / 0.45) : 1;
         var ccx = pcx + slideOff, ccy = pcy;
-        if (burst > 0.02 && fade > 0.01 && fanCv) {
-          c.save(); c.globalCompositeOperation = 'lighter'; c.translate(ccx, ccy); c.rotate(rot);
-          var sc = (0.55 + 0.45 * burst);
-          c.globalAlpha = 0.62 * fade; c.drawImage(fanCv, -fanR * sc, -fanR * sc, fanR * 2 * sc, fanR * 2 * sc);
-          c.globalAlpha = 0.22 * fade; c.strokeStyle = '#ffffff'; c.lineWidth = 2;
-          for (var sp0 = 0; sp0 < 3; sp0++) { var ra = sp0 * 2.1 + rot * 1.6; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(ra) * fanR * sc * .9, Math.sin(ra) * fanR * sc * .9); c.stroke(); }
-          c.restore();
+        var nBeam = (t < 0.7) ? 0 : Math.min(7, Math.floor((t - 0.7) / 0.2) + 1);
+        c.save(); c.globalCompositeOperation = 'lighter';
+        for (var bi = 0; bi < nBeam; bi++) {
+          var age = t - (0.7 + bi * 0.2); if (age <= 0) continue;
+          var ramp = Math.min(1, age / 0.12), a0 = bi * (Math.PI * 2 / 7), half = (Math.PI / 7) * 0.55;
+          var rgc = c.createRadialGradient(ccx, ccy, 4, ccx, ccy, R);
+          rgc.addColorStop(0, 'rgba(255,255,255,.9)'); rgc.addColorStop(.22, cols7[bi]); rgc.addColorStop(1, 'rgba(0,0,0,0)');
+          c.globalAlpha = 0.45 * ramp * fade; c.fillStyle = rgc;
+          c.beginPath(); c.moveTo(ccx, ccy); c.arc(ccx, ccy, R, a0 - half, a0 + half); c.closePath(); c.fill();
         }
-        // 标题本身：强化的七色渐变 + 呼吸 + 高光扫过
+        if (t >= 2.05) {
+          var rot = t > 2.5 ? (t - 2.5) * 0.9 : 0;
+          c.globalAlpha = 0.34 * fade; c.fillStyle = 'rgba(255,255,255,.85)';
+          c.beginPath(); c.arc(ccx, ccy, R * 0.30, 0, 7); c.fill();
+          if (rot > 0) {
+            c.globalAlpha = 0.55 * fade; c.strokeStyle = '#ffffff'; c.lineWidth = 1.1;
+            for (var sp0 = 0; sp0 < 3; sp0++) { var ra = sp0 * 2.1 + rot; c.beginPath(); c.moveTo(ccx, ccy); c.lineTo(ccx + Math.cos(ra) * R * .85, ccy + Math.sin(ra) * R * .85); c.stroke(); }
+          }
+        }
+        c.restore();
+        // 标题七彩 + 高光
         var hit = Math.min(1, Math.max(0, (t - 0.6) / 0.45));
         if (hit > 0) {
           tt.style.color = 'transparent';
@@ -494,8 +499,8 @@
         }
         tt.style.textShadow = (-kk) + 'px 0 rgba(255,40,80,.9), ' + kk + 'px 0 rgba(60,220,255,.9), 0 0 26px rgba(180,240,255,.6)';
         tt.style.opacity = t > 3.6 ? String(Math.max(0, 1 - (t - 3.6) / 0.28)) : (tt.style.opacity === '0' ? '0' : '1');
-        if (t > 0.75 && t < 3.3 && shards.length < 60) {
-          if (Math.random() < .7) shards.push({ x: ccx + rnd(-pb.width * .4, pb.width * .4), y: pcy + rnd(-10, 14), vx: rnd(-26, 26), vy: rnd(-30, 26), s: rnd(2, 4), a: rnd(0, 6.28), va: rnd(-2, 2), life: rnd(.4, .9), max: .9, col: ['#ff3b3b', '#ff9f1c', '#ffe066', '#4ade80', '#22d3ee', '#3b82f6', '#a855f7'][Math.floor(Math.random() * 7)] });
+        if (t > 0.9 && t < 3.3 && shards.length < 60) {
+          if (Math.random() < .6) shards.push({ x: ccx + rnd(-pb.width * .4, pb.width * .4), y: pcy + rnd(-10, 14), vx: rnd(-24, 24), vy: rnd(-28, 24), s: rnd(2, 4), a: rnd(0, 6.28), va: rnd(-2, 2), life: rnd(.4, .8), max: .8, col: cols7[Math.floor(Math.random() * 7)] });
         }
         for (var sh3 = shards.length - 1; sh3 >= 0; sh3--) {
           var q3 = shards[sh3]; if (q3.life <= 0) { shards.splice(sh3, 1); continue; }
@@ -522,7 +527,7 @@
         ig.addColorStop(0, 'rgba(220,235,255,' + (0.20 * fade) + ')'); ig.addColorStop(1, 'rgba(120,160,220,0)');
         c.fillStyle = ig; c.fillRect(0, 0, W, H);
       }
-      if (t < DUR) requestAnimationFrame(frame); else { cv.remove(); if (tt) { tt.classList.remove('fx-prism', 'fx-neon'); tt.style.transform = ''; tt.style.filter = ''; tt.style.textShadow = ''; tt.style.backgroundImage = 'none'; tt.style.backgroundPosition = ''; tt.style.color = ''; tt.style.opacity = (fx === 'prism' ? '0' : '1'); } for (var le2 = 0; le2 < lineEls.length; le2++) lineEls[le2].style.opacity = ''; }
+      if (t < DUR) requestAnimationFrame(frame); else { cv.remove(); if (tt) { tt.classList.remove('fx-prism', 'fx-neon'); tt.style.transform = ''; tt.style.filter = ''; tt.style.textShadow = ''; tt.style.backgroundImage = 'none'; tt.style.backgroundPosition = ''; tt.style.color = ''; tt.style.opacity = (fx === 'prism' ? '0' : '1'); if (gh1 && gh1.parentNode) gh1.parentNode.removeChild(gh1); if (gh2 && gh2.parentNode) gh2.parentNode.removeChild(gh2); gh1 = gh2 = null; } for (var le2 = 0; le2 < lineEls.length; le2++) lineEls[le2].style.opacity = ''; }
     }
     requestAnimationFrame(frame);
   }
