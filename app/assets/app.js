@@ -21,7 +21,7 @@
     look: { bgBlur: 0, perfAuto: false, shape: 'capsule', fx: 'splash', gradient: 'random', pedal: true, topbar: true,
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
       leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true, collapsed: false,
-      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, guiAlpha: 72, guiColor: 'navy', lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60, ext: { on: false, lines: 4, alpha: 85, mpl: 0, xoff: 0, yoff: 0, lineShift: 0 }, rec: { on: false, fade: 1.0, title: true, style: 'classic' },
+      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, guiAlpha: 72, guiColor: 'navy', lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60, ext: { on: false, lines: 4, alpha: 85, mpl: 0, xoff: 0, yoff: 0, lineShift: 0 }, rec: { on: false, fade: 1.0, title: true, style: 'classic', fx: 'none' },
       score: { on: true, glow: true, color: 'white', pos: 20, size: 0.9, glowLevel: 1, bgAlpha: 0.72 } },
     freePlay: false, ext: { imgs: [] }, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
@@ -341,6 +341,7 @@
         var name = state.title || 'MIDI 钢琴';
         tt.textContent = name;
         tt.className = rec.style || 'classic';
+        tw.setAttribute('data-fx', rec.fx || 'none');
         tw.classList.add('show');
         setTimeout(function () { tw.classList.remove('show'); reveal(); }, 3000);
       } else {
@@ -1018,6 +1019,7 @@
         if (typeof o.rec.fade === 'number') state.look.rec.fade = Math.max(0.3, Math.min(4, o.rec.fade));
         if (typeof o.rec.title === 'boolean') state.look.rec.title = o.rec.title;
         if (typeof o.rec.style === 'string' && /^(classic|fade|scale)$/.test(o.rec.style)) state.look.rec.style = o.rec.style;
+        if (typeof o.rec.fx === 'string' && /^(none|swords|flame|prism|neon|ink)$/.test(o.rec.fx)) state.look.rec.fx = o.rec.fx;
       }
       if (o && o.ext && typeof o.ext === 'object') {
         if (typeof o.ext.on === 'boolean') state.look.ext.on = o.ext.on;
@@ -1175,6 +1177,8 @@
     for (var ro = 0; ro < rOn.length; ro++) rOn[ro].classList.toggle('active', (rOn[ro].getAttribute('data-rec') === 'on') === !!state.look.rec.on);
     var rT = document.querySelectorAll('#recTitleOpts .opt');
     for (var rt = 0; rt < rT.length; rt++) rT[rt].classList.toggle('active', (rT[rt].getAttribute('data-rectitle') === 'on') === !!state.look.rec.title);
+    var rF = document.querySelectorAll('#recFxOpts .opt');
+    for (var rfx = 0; rfx < rF.length; rfx++) rF[rfx].classList.toggle('active', rF[rfx].getAttribute('data-recfx') === state.look.rec.fx);
     var rS = document.querySelectorAll('#recStyleOpts .opt');
     for (var rs = 0; rs < rS.length; rs++) rS[rs].classList.toggle('active', rS[rs].getAttribute('data-recstyle') === state.look.rec.style);
     var rf = $('recFade'); if (rf) rf.value = String(Math.round(state.look.rec.fade * 10));
@@ -2514,6 +2518,30 @@
     [cancel, ok].forEach(function (b) { b.style.cssText = 'flex:1;padding:12px;border-radius:10px;border:1px solid #2c4468;background:#16233a;color:#dce9ff'; });
     bar.appendChild(cancel); bar.appendChild(ok); ov.appendChild(cv); ov.appendChild(bar); document.body.appendChild(ov);
     var img = new Image(), scale = 1, ox = 0, oy = 0, drag = null, pinch = null;
+    function frameBox(w, h) {
+      var land = w > h, fw, fh;
+      if (land) { fh = h * 0.78; fw = fh * 16 / 9; if (fw > w * 0.86) { fw = w * 0.86; fh = fw * 9 / 16; } }
+      else { fw = w * 0.82; fh = fw * 16 / 9; if (fh > h * 0.82) { fh = h * 0.82; fw = fh * 9 / 16; } }
+      return { fw: fw, fh: fh, fx: (w - fw) / 2, fy: (h - fh) / 2 };
+    }
+    function clampCrop() {
+      if (!img.width) return;
+      var w = cv.clientWidth, h = cv.clientHeight, f = frameBox(w, h);
+      var base = Math.max(w / img.width, h / img.height);
+      var minS = Math.max(f.fw / (img.width * base), f.fh / (img.height * base), 0.6);
+      if (scale < minS) scale = minS;
+      var dw = img.width * base * scale, dh = img.height * base * scale;
+      var oxmin = f.fx - (w - dw) / 2, oxmax = f.fx + f.fw - (w - dw) / 2 - dw;
+      var oymin = f.fy - (h - dh) / 2, oymax = f.fy + f.fh - (h - dh) / 2 - dh;
+      ox = Math.max(oxmin, Math.min(oxmax, ox));
+      oy = Math.max(oymin, Math.min(oymax, oy));
+    }
+    function zoomTo(ns) {
+      var old = scale; ns = Math.max(0.6, Math.min(4, ns));
+      if (!img.width) { scale = ns; return; }
+      ox = ox * ns / old; oy = oy * ns / old;
+      scale = ns; clampCrop();
+    }
     function layout() { var w = cv.clientWidth, h = cv.clientHeight; cv.width = w * 2; cv.height = h * 2; cv.style.height = h + 'px'; }
     function draw() {
       var w = cv.clientWidth, h = cv.clientHeight, c = cv.getContext('2d');
@@ -2524,10 +2552,7 @@
         c.drawImage(img, (w - dw) / 2 + ox, (h - dh) / 2 + oy, dw, dh);
       }
       land0 = w > h;
-      var fw, fh;
-      if (land0) { fh = h * 0.78; fw = fh * 16 / 9; if (fw > w * 0.86) { fw = w * 0.86; fh = fw * 9 / 16; } }
-      else { fw = w * 0.82; fh = fw * 16 / 9; if (fh > h * 0.82) { fh = h * 0.82; fw = fh * 9 / 16; } }
-      var fx = (w - fw) / 2, fy = (h - fh) / 2;
+      var f = frameBox(w, h), fw = f.fw, fh = f.fh, fx = f.fx, fy = f.fy;
       c.fillStyle = 'rgba(0,0,0,.58)';
       c.fillRect(0, 0, w, fy); c.fillRect(0, fy + fh, w, h - fy - fh);
       c.fillRect(0, fy, fx, fh); c.fillRect(fx + fw, fy, w - fx - fw, fh);
@@ -2537,10 +2562,10 @@
     img.src = dataUrl;
     window.addEventListener('resize', function () { layout(); draw(); });
     cv.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, ox: ox, oy: oy }; cv.setPointerCapture(e.pointerId); });
-    cv.addEventListener('pointermove', function (e) { if (drag) { ox = drag.ox + (e.clientX - drag.x); oy = drag.oy + (e.clientY - drag.y); draw(); } });
+    cv.addEventListener('pointermove', function (e) { if (drag) { ox = drag.ox + (e.clientX - drag.x); oy = drag.oy + (e.clientY - drag.y); clampCrop(); draw(); } });
     cv.addEventListener('pointerup', function () { drag = null; });
-    cv.addEventListener('wheel', function (e) { e.preventDefault(); scale = Math.max(0.6, Math.min(4, scale * (e.deltaY < 0 ? 1.08 : 0.92))); draw(); }, { passive: false });
-    cv.addEventListener('touchmove', function (e) { if (e.touches.length === 2) { var dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY, d = Math.sqrt(dx * dx + dy * dy); if (pinch) { scale = Math.max(0.6, Math.min(4, scale * d / Math.max(1, pinch))); draw(); } pinch = d; e.preventDefault(); } }, { passive: false });
+    cv.addEventListener('wheel', function (e) { e.preventDefault(); zoomTo(scale * (e.deltaY < 0 ? 1.08 : 0.92)); draw(); }, { passive: false });
+    cv.addEventListener('touchmove', function (e) { if (e.touches.length === 2) { var dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY, d = Math.sqrt(dx * dx + dy * dy); if (pinch) { zoomTo(scale * d / Math.max(1, pinch)); draw(); } pinch = d; e.preventDefault(); } }, { passive: false });
     cv.addEventListener('touchend', function () { pinch = null; });
     cancel.onclick = function () { ov.remove(); };
     ok.onclick = function () {
@@ -2549,10 +2574,7 @@
       var dw = img.width * base * scale, dh = img.height * base * scale;
       var dx = (w - dw) / 2 + ox, dy = (h - dh) / 2 + oy;
       land0 = w > h;
-      var fw, fh;
-      if (land0) { fh = h * 0.78; fw = fh * 16 / 9; if (fw > w * 0.86) { fw = w * 0.86; fh = fw * 9 / 16; } }
-      else { fw = w * 0.82; fh = fw * 16 / 9; if (fh > h * 0.82) { fh = h * 0.82; fw = fh * 9 / 16; } }
-      var fx = (w - fw) / 2, fy = (h - fh) / 2;
+      var f = frameBox(w, h), fw = f.fw, fh = f.fh, fx = f.fx, fy = f.fy;
       var out = document.createElement('canvas'); out.width = land0 ? 1280 : 720; out.height = land0 ? 720 : 1280;
       var sx = (fx - dx) / (dw / img.width), sy = (fy - dy) / (dh / img.height);
       var sw = fw / (dw / img.width), sh = fh / (dh / img.height);
@@ -2967,6 +2989,7 @@
         if (b.hasAttribute('data-rec')) state.look.rec.on = b.getAttribute('data-rec') === 'on';
         if (b.hasAttribute('data-rectitle')) state.look.rec.title = b.getAttribute('data-rectitle') === 'on';
         if (b.hasAttribute('data-recstyle')) state.look.rec.style = b.getAttribute('data-recstyle');
+        if (b.hasAttribute('data-recfx')) state.look.rec.fx = b.getAttribute('data-recfx');
         if (b.hasAttribute('data-line')) applyGui();
         if (b.hasAttribute('data-mist')) state.look.mistColor = b.getAttribute('data-mist');
         if (b.hasAttribute('data-linelevel')) state.look.linePower = Math.max(0, Math.min(3, +b.getAttribute('data-linelevel') || 0));
