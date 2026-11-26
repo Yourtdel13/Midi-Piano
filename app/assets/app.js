@@ -339,7 +339,7 @@
       }
     }
     var strokes = [], debris = [], redDone = false;
-    var DUR = fx === 'swords' ? 4.6 : (fx === 'prism' ? 3.0 : 3.25);
+    var DUR = fx === 'swords' ? 4.6 : (fx === 'prism' ? 3.9 : 3.25);
     function rnd(a2, b2) { return a2 + Math.random() * (b2 - a2); }
     function segHit(x1, y1, x2, y2, x3, y3, x4, y4) {
       var d = (x2 - x1) * (y4 - y3) - (y2 - y1) * (x4 - x3); if (Math.abs(d) < 1e-6) return null;
@@ -434,44 +434,44 @@
         var pb = prismBase, pcx = pb.left + pb.width / 2, pcy = pb.top + pb.height / 2;
         var ease = function (x) { return 1 - Math.pow(1 - x, 3); };
         var kk = 3;
-        if (t < 0.7) {
-          var ph = ease(Math.min(1, t / 0.62)), dx = (1 - ph) * Math.min(W * 0.7, 720);
+        if (t < 1.0) {
+          var ph = ease(Math.min(1, t / 0.9)), dx = (1 - ph) * Math.min(W * 0.7, 720);
           tt.style.transform = 'translateX(' + dx + 'px) skewX(' + ((1 - ph) * -10) + 'deg)';
           tt.style.filter = 'blur(' + ((1 - ph) * 1.6) + 'px)';
           kk = Math.max(2, (1 - ph) * 8);
-        } else if (t < 1.8) {
+        } else if (t < 2.3) {
           tt.style.transform = 'translateX(0)'; tt.style.filter = 'none'; kk = 3;
-          var sp = (t - 0.72) / 1.05, bandX = pb.left + sp * pb.width;
+          var sp = (t - 1.0) / 1.3, bandX = pb.left + sp * pb.width;
           c.save(); c.translate(bandX, pcy); c.rotate(-0.18); c.shadowColor = '#ffffff'; c.shadowBlur = 26;
           var bg = c.createLinearGradient(-3, 0, 3, 0);
           bg.addColorStop(0, 'rgba(120,220,255,0)'); bg.addColorStop(.35, 'rgba(200,245,255,.95)'); bg.addColorStop(.5, '#ffffff');
           bg.addColorStop(.65, 'rgba(255,200,240,.95)'); bg.addColorStop(1, 'rgba(255,230,160,0)');
-          c.fillStyle = bg; c.fillRect(-3, -pb.height * 0.9, 6, pb.height * 1.8); c.restore();
+          c.fillStyle = bg; c.fillRect(-5, -pb.height * 0.95, 10, pb.height * 1.9); c.restore();
           tt.style.backgroundImage = 'linear-gradient(100deg,#00e5ff 0%,#ff3d7f 25%,#ffd166 42%,#ffffff 50%,#00e5ff 60%,#ff3d7f 78%,#7af0ff 100%)';
           tt.style.backgroundSize = '220% 100%'; tt.style.backgroundPosition = ((1 - sp) * 100) + '% 0';
           tt.style.webkitBackgroundClip = 'text'; tt.style.backgroundClip = 'text'; tt.style.color = 'transparent';
           tt.style.filter = 'brightness(1.18) saturate(1.35)';
-        } else if (t < 2.55) {
-          var q = Math.min(1, (t - 1.8) / 0.55);
+        } else if (t < 3.3) {
+          var q = Math.min(1, (t - 2.35) / 0.95);
           tt.style.transform = 'translateX(' + (-q * Math.min(W * 0.75, 820)) + 'px) scaleX(' + (1 + q * 0.12) + ') skewX(' + (-q * 9) + 'deg)';
           kk = 3 + q * 7; tt.style.filter = 'none'; tt.style.color = '#fff'; tt.style.backgroundImage = 'none';
-        } else if (t < 2.62) {
+        } else if (t < 3.42) {
           tt.style.transform = 'translateX(' + (-Math.min(W * 0.75, 820)) + 'px) scaleX(0.05)'; tt.style.opacity = '0';
         }
         tt.style.textShadow = (-kk) + 'px 0 rgba(255,40,80,.85), ' + kk + 'px 0 rgba(60,220,255,.85), 0 0 26px rgba(180,240,255,.6)';
-        if (t > 0.72 && t < 2.6 && shards.length < 80) {
-          for (var ss = 0; ss < 2; ss++) shards.push({ x: pb.left + rnd(-40, pb.width + 40), y: pb.top + rnd(-24, pb.height + 24), vx: rnd(-20, 20), vy: rnd(-26, 6), s: rnd(2, 5), a: rnd(0, 6.28), va: rnd(-2.5, 2.5), life: rnd(.5, 1.0), max: 1.0, col: ['#bff4ff', '#ff9ad5', '#ffe08a', '#9d7bff'][Math.floor(Math.random() * 4)] });
+        if (t > 1.0 && t < 3.2 && shards.length < 120) {
+          for (var ss = 0; ss < 3; ss++) shards.push({ x: pb.left + rnd(-40, pb.width + 40), y: pb.top + rnd(-24, pb.height + 24), vx: rnd(-20, 20), vy: rnd(-26, 6), s: rnd(3, 8), a: rnd(0, 6.28), va: rnd(-2.5, 2.5), life: rnd(.5, 1.0), max: 1.0, col: ['#bff4ff', '#ff9ad5', '#ffe08a', '#9d7bff'][Math.floor(Math.random() * 4)] });
         }
         for (var sh2 = shards.length - 1; sh2 >= 0; sh2--) {
           var q2 = shards[sh2]; if (q2.life <= 0) { shards.splice(sh2, 1); continue; }
-          c.save(); c.translate(q2.x, q2.y); c.rotate(q2.a); c.globalAlpha = Math.max(0, q2.life); c.fillStyle = q2.col || '#bff4ff'; c.shadowColor = '#bff4ff'; c.shadowBlur = 10;
+          c.save(); c.translate(q2.x, q2.y); c.rotate(q2.a); c.globalAlpha = Math.max(0, q2.life); c.fillStyle = q2.col || '#bff4ff'; c.shadowColor = '#bff4ff'; c.shadowBlur = 18;
           c.fillRect(-q2.s / 2, -q2.s / 2, q2.s, q2.s); c.restore();
           q2.x += q2.vx * .016; q2.y += q2.vy * .016; q2.a += q2.va * .016; q2.life -= .012;
         }
-        if (t > 2.6 && spotsP.length < 50) { for (var pz = 0; pz < 3; pz++) spotsP.push({ x: pcx + rnd(-pb.width * .5, pb.width * .5), y: pb.bottom + 34 + rnd(-6, 10), s: rnd(1, 3), ph: rnd(0, 6.28), life: rnd(.4, 1) }); }
+        if (t > 3.35 && spotsP.length < 60) { for (var pz = 0; pz < 4; pz++) spotsP.push({ x: pcx + rnd(-pb.width * .5, pb.width * .5), y: pb.bottom + 34 + rnd(-6, 10), s: rnd(1.5, 4), ph: rnd(0, 6.28), life: rnd(.6, 1.4) }); }
         for (var pz2 = spotsP.length - 1; pz2 >= 0; pz2--) {
           var zt = spotsP[pz2]; if (zt.life <= 0) { spotsP.splice(pz2, 1); continue; }
-          c.save(); c.globalAlpha = Math.max(0, zt.life) * (.45 + .55 * Math.abs(Math.sin(performance.now() / 220 + zt.ph))); c.fillStyle = '#dff6ff'; c.shadowColor = '#9fe8ff'; c.shadowBlur = 12;
+          c.save(); c.globalAlpha = Math.max(0, zt.life) * (.45 + .55 * Math.abs(Math.sin(performance.now() / 220 + zt.ph))); c.fillStyle = '#dff6ff'; c.shadowColor = '#9fe8ff'; c.shadowBlur = 16;
           c.beginPath(); c.arc(zt.x, zt.y, zt.s, 0, 7); c.fill(); c.restore(); zt.life -= .01;
         }
       } else if (fx === 'neon') {
@@ -509,11 +509,11 @@
       if (rec.title && tt && tw) {
         var name = state.title || 'MIDI 钢琴';
         tt.textContent = name;
-        tt.className = rec.style || 'classic';
+        tt.className = (rec.fx === 'prism') ? '' : (rec.style || 'classic');
         tw.setAttribute('data-fx', rec.fx || 'none');
         tw.classList.add('show');
         try { startTitleFx(rec.fx, tw, tt); } catch (e) { }
-        setTimeout(function () { tw.classList.remove('show'); reveal(); }, 3000);
+        setTimeout(function () { tw.classList.remove('show'); reveal(); }, rec.fx === 'prism' ? 4100 : 3000);
       } else {
         reveal();
       }
