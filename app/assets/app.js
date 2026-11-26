@@ -364,20 +364,20 @@
           var e0 = order[si0], A0 = pts[e0[0]], B0 = pts[e0[1]], pr0 = Math.max(0, Math.min(1, (t - (0.04 + si0 * 0.15)) / 0.14));
           if (pr0 > 0) {
             var ex0 = A0.x + (B0.x - A0.x) * pr0, ey0 = A0.y + (B0.y - A0.y) * pr0;
-            c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = dim; c.shadowColor = '#8fe4ff'; c.shadowBlur = 60; c.strokeStyle = 'rgba(150,230,255,.95)'; c.lineWidth = 8; c.lineCap = 'round';
+            c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = dim; c.shadowColor = '#8fe4ff'; c.shadowBlur = 52; c.strokeStyle = 'rgba(150,230,255,.95)'; c.lineWidth = 4.2; c.lineCap = 'round';
             c.beginPath(); c.moveTo(A0.x, A0.y); c.lineTo(ex0, ey0); c.stroke();
-            c.globalCompositeOperation = 'source-over'; c.globalAlpha = dim; c.shadowColor = '#ffffff'; c.shadowBlur = 30; c.strokeStyle = '#ffffff'; c.lineWidth = 3;
+            c.globalCompositeOperation = 'source-over'; c.globalAlpha = dim; c.shadowColor = '#ffffff'; c.shadowBlur = 26; c.strokeStyle = '#ffffff'; c.lineWidth = 1.7;
             c.beginPath(); c.moveTo(A0.x, A0.y); c.lineTo(ex0, ey0); c.stroke();
-            c.fillStyle = '#fff'; c.shadowColor = '#fff'; c.shadowBlur = 30; c.beginPath(); c.arc(ex0, ey0, 2.8, 0, 7); c.fill(); c.restore();
+            c.fillStyle = '#fff'; c.shadowColor = '#fff'; c.shadowBlur = 30; c.beginPath(); c.arc(ex0, ey0, 2.0, 0, 7); c.fill(); c.restore();
           }
         }
         var midA = { x: W * 0.04, y: H * 0.5 }, midB = { x: W * 0.96, y: H * 0.5 };
         var mp0 = Math.max(0, Math.min(1, (t - 1.7) / 0.15));
         if (mp0 > 0) {
           var mx0 = midA.x + (midB.x - midA.x) * mp0;
-          c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = dim; c.shadowColor = '#ff9aa6'; c.shadowBlur = 64; c.strokeStyle = 'rgba(255,200,210,.95)'; c.lineWidth = 12; c.lineCap = 'round';
+          c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = dim; c.shadowColor = '#ff9aa6'; c.shadowBlur = 64; c.strokeStyle = 'rgba(255,200,210,.95)'; c.lineWidth = 9; c.lineCap = 'round';
           c.beginPath(); c.moveTo(midA.x, midA.y); c.lineTo(mx0, midB.y); c.stroke();
-          c.globalCompositeOperation = 'source-over'; c.globalAlpha = dim; c.shadowColor = '#ffffff'; c.shadowBlur = 34; c.strokeStyle = '#ffffff'; c.lineWidth = 3.6;
+          c.globalCompositeOperation = 'source-over'; c.globalAlpha = dim; c.shadowColor = '#ffffff'; c.shadowBlur = 34; c.strokeStyle = '#ffffff'; c.lineWidth = 2.6;
           c.beginPath(); c.moveTo(midA.x, midA.y); c.lineTo(mx0, midB.y); c.stroke(); c.restore();
         }
         if (t > 2.6 && dim > 0) {
@@ -395,7 +395,7 @@
           broken = true;
           measureLines();
           for (var lh = 0; lh < lineEls.length; lh++) lineEls[lh].style.opacity = '0';
-          for (var s9 = 0; s9 < 6; s9++) { var e9 = order[s9], A9 = pts[e9[0]], B9 = pts[e9[1]]; for (var w9 = 0; w9 < 10; w9++) wind.push({ x: A9.x + (B9.x - A9.x) * Math.random(), y: A9.y + (B9.y - A9.y) * Math.random(), vx: rnd(-560, 560), vy: rnd(-260, 260), life: 0.6 }); }
+          for (var s9 = 0; s9 < 6; s9++) { var e9 = order[s9], A9 = pts[e9[0]], B9 = pts[e9[1]]; for (var w9 = 0; w9 < 16; w9++) wind.push({ x: A9.x + (B9.x - A9.x) * Math.random(), y: A9.y + (B9.y - A9.y) * Math.random(), vx: rnd(-680, 680), vy: rnd(-340, 340), life: 0.8 }); }
           for (var lb = 0; lb < lines.length; lb++) {
             var LB = lines[lb], cuts = [];
             for (var sb = 0; sb < 6; sb++) { var eb = order[sb], Ab = pts[eb[0]], Bb = pts[eb[1]], hb = segHit(Ab.x, Ab.y, Bb.x, Bb.y, LB.x, LB.y, LB.x + LB.w, LB.y); if (hb) cuts.push(hb.x); }
@@ -405,7 +405,7 @@
               for (var spk = 0; spk < 8; spk++) debris.push({ x: (xs[kx] + xs[kx + 1]) / 2 + rnd(-12, 12), y: LB.y + rnd(-4, 4), ang: 0, len: 2, vx: rnd(-90, 90), vy: rnd(-110, -20), vr: rnd(-3, 3), life: rnd(.6, 1.2), max: 1.2, color: '#dff4ff', spark: true }); }
           }
         }
-        for (var wi0 = wind.length - 1; wi0 >= 0; wi0--) { var p0 = wind[wi0]; if (p0.life <= 0) { wind.splice(wi0, 1); continue; } c.save(); c.globalAlpha = Math.max(0, p0.life); c.strokeStyle = p0.red ? 'rgba(255,70,90,.95)' : 'rgba(225,245,255,.85)'; c.lineWidth = p0.red ? 2.6 : 1.4; c.beginPath(); c.moveTo(p0.x, p0.y); c.lineTo(p0.x - p0.vx * 0.04, p0.y - p0.vy * 0.04); c.stroke(); c.restore(); p0.x += p0.vx * .016; p0.y += p0.vy * .016; p0.life -= .03; }
+        for (var wi0 = wind.length - 1; wi0 >= 0; wi0--) { var p0 = wind[wi0]; if (p0.life <= 0) { wind.splice(wi0, 1); continue; } c.save(); c.globalAlpha = Math.max(0, p0.life); c.strokeStyle = p0.red ? 'rgba(255,80,100,.98)' : 'rgba(235,250,255,.95)'; c.lineWidth = p0.red ? 3 : 2; c.beginPath(); c.moveTo(p0.x, p0.y); c.lineTo(p0.x - p0.vx * 0.04, p0.y - p0.vy * 0.04); c.stroke(); c.restore(); p0.x += p0.vx * .016; p0.y += p0.vy * .016; p0.life -= .03; }
         c.restore();
       } else if (fx === 'flame') {
         var L = [{ x: W * .1, y: H * .42, w: W * .8, h: 2 }, { x: W * .1, y: H * .56, w: W * .8, h: 2 }];

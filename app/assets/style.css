@@ -686,6 +686,6 @@ body.chrome-off #btnLook, body.chrome-off #topOpen, body.chrome-off #controls, b
 @keyframes fxInk { from { transform: scale(.5); opacity: 0; } 30% { opacity: 1; } to { transform: scale(1.6); opacity: .2; } }
 
 #recTitleWrap { position: fixed; }
-.rt-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 3; }
+.rt-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 90; }
 #recTitle.fx-prism { background: linear-gradient(120deg,#bff4ff,#ff9ad5 45%,#ffe08a 70%,#bff4ff); -webkit-background-clip: text; background-clip: text; color: transparent !important; filter: drop-shadow(0 0 18px rgba(140,220,255,.55)); }
 #recTitle.fx-neon { text-shadow: 0 0 12px #4cc9f0, 0 0 30px #f72585, 0 0 60px #4cc9f0; }
