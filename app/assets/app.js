@@ -328,12 +328,13 @@
     if (!black) { cb(); return; }
     state.introActive = true;
     chromeHide();
-    black.style.transitionDuration = Math.max(0.3, rec.fade) + 's';
+    black.style.transitionDuration = '1s';
     black.classList.add('show');
     function reveal() {
+      black.style.transitionDuration = Math.max(0.3, rec.fade) + 's';
       black.classList.add('fadeout');
       try { cb(true); } catch (e) { }
-      setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; }, 1100);
+      setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; }, Math.max(1200, rec.fade * 1000 + 300));
     }
     setTimeout(function () {
       if (rec.title && tt && tw) {
@@ -345,7 +346,7 @@
       } else {
         reveal();
       }
-    }, Math.max(300, rec.fade * 1000));
+    }, 1000);
   }
 
   function play() {
