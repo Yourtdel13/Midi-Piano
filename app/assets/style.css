@@ -671,12 +671,6 @@ body.chrome-off #btnLook, body.chrome-off #topOpen, body.chrome-off #controls, b
 @keyframes rtScale { 0% { opacity: 0; transform: scale(.7) } 25% { opacity: 1; transform: scale(1) } 70% { opacity: 1 } 100% { opacity: 0; transform: scale(1.15) } }
 
 /* title fx */
-#recTitleWrap[data-fx="swords"]::before, #recTitleWrap[data-fx="swords"]::after { content: ''; position: absolute; width: 74vw; height: 3px; top: 52%;
-  background: linear-gradient(90deg, transparent, #bfe3ff, #7fb2ff, transparent); box-shadow: 0 0 18px rgba(120,180,255,.85); }
-#recTitleWrap[data-fx="swords"]::before { transform: rotate(18deg); animation: fxSword 1.6s ease-in-out infinite alternate; }
-#recTitleWrap[data-fx="swords"]::after { transform: rotate(-18deg); animation: fxSword 1.6s ease-in-out infinite alternate-reverse; }
-@keyframes fxSword { from { opacity: .35; filter: blur(1px); } to { opacity: 1; filter: blur(0); } }
-#recTitleWrap[data-fx="flame"]::before { content: ''; position: absolute; bottom: -26px; width: 60vw; height: 70px; border-radius: 50%;
   background: radial-gradient(ellipse at center, rgba(255,120,30,.55), rgba(255,60,0,.18) 55%, transparent 75%); filter: blur(8px);
   animation: fxFlame 1.1s ease-in-out infinite alternate; }
 @keyframes fxFlame { from { transform: scaleY(.85) translateY(4px); opacity: .65; } to { transform: scaleY(1.15) translateY(-4px); opacity: 1; } }

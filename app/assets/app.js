@@ -329,7 +329,7 @@
     var W = window.innerWidth, H = window.innerHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
     cv.width = W * dpr; cv.height = H * dpr;
     var c = cv.getContext('2d'); c.scale(dpr, dpr);
-    var t0 = performance.now(), ash = [], shards = [];
+    var t0 = performance.now(), ash = [], shards = [], wind = [], broken = false;
     var strokes = [], debris = [], redDone = false;
     var DUR = fx === 'swords' ? 4.6 : 3.25;
     function rnd(a2, b2) { return a2 + Math.random() * (b2 - a2); }
@@ -343,66 +343,41 @@
     function frame(now) {
       var t = (now - t0) / 1000; c.clearRect(0, 0, W, H);
       if (fx === 'swords') {
-        // phase 1: weave strokes between 0 and 1.9s
-        if (t < 2.0 && strokes.length < 16 && Math.random() < 0.16) {
-          var cx = W * rnd(0.30, 0.70), cy = H * rnd(0.30, 0.64);
-          var ang = rnd(-0.9, 0.9) + (Math.random() < 0.5 ? 0 : Math.PI / 2), len = W * rnd(0.10, 0.26);
-          var pts = [], n = 7, dx = Math.cos(ang) * len / (n - 1), dy = Math.sin(ang) * len / (n - 1);
-          var curvature = rnd(-0.35, 0.35);
-          for (var p3 = 0; p3 < n; p3++) pts.push({ x: cx - Math.cos(ang) * len / 2 + dx * p3 + curvature * Math.sin(p3 / (n - 1) * Math.PI) * W * 0.05, y: cy - Math.sin(ang) * len / 2 + dy * p3 + curvature * Math.cos(p3 / (n - 1) * Math.PI) * H * 0.03 });
-          strokes.push({ pts: pts, t0: t, color: Math.random() < 0.5 ? '#dff4ff' : '#8fe8ff' });
+        var cx = W / 2, cy = H * 0.5, R = Math.min(W, H) * 0.34, pts = [];
+        for (var pi = 0; pi < 6; pi++) { var an = -Math.PI / 2 + pi * Math.PI / 3; pts.push({ x: cx + Math.cos(an) * R, y: cy + Math.sin(an) * R }); }
+        var order = [[0, 2], [2, 4], [4, 0], [1, 3], [3, 5], [5, 1]];
+        if (t < 2.9) {
+          for (var li0 = 0; li0 < lines.length; li0++) { var L0 = lines[li0]; c.save(); c.strokeStyle = 'rgba(190,220,255,.7)'; c.shadowColor = 'rgba(120,170,255,.5)'; c.shadowBlur = 12; c.lineWidth = 2; c.beginPath(); c.moveTo(L0.x, L0.y); c.lineTo(L0.x + L0.w, L0.y); c.stroke(); c.restore(); }
         }
-        // draw strokes
-        for (var si = 0; si < strokes.length; si++) {
-          var s = strokes[si], age = t - s.t0, prog = Math.max(0, Math.min(1, age / 0.22));
-          var maxSeg = Math.max(1, Math.floor((s.pts.length - 1) * prog));
-          c.save(); c.shadowColor = s.color; c.shadowBlur = 14; c.strokeStyle = s.color; c.lineWidth = 1.4;
-          c.beginPath();
-          for (var q = 0; q <= maxSeg && q < s.pts.length; q++) { if (q === 0) c.moveTo(s.pts[q].x, s.pts[q].y); else c.lineTo(s.pts[q].x, s.pts[q].y); }
-          c.stroke(); c.restore();
-          if (prog < 1) {
-            var hd = s.pts[Math.min(maxSeg, s.pts.length - 1)];
-            c.save(); c.shadowColor = '#fff'; c.shadowBlur = 18; c.fillStyle = '#fff'; c.beginPath(); c.arc(hd.x, hd.y, 2.2, 0, 7); c.fill(); c.restore();
+        for (var si0 = 0; si0 < 6; si0++) {
+          var e0 = order[si0], A0 = pts[e0[0]], B0 = pts[e0[1]], pr0 = Math.max(0, Math.min(1, (t - (0.18 + si0 * 0.28)) / 0.18));
+          if (pr0 > 0) {
+            var ex0 = A0.x + (B0.x - A0.x) * pr0, ey0 = A0.y + (B0.y - A0.y) * pr0;
+            c.save(); c.shadowColor = '#dff4ff'; c.shadowBlur = 20; c.strokeStyle = 'rgba(230,248,255,.95)'; c.lineWidth = 2.8; c.lineCap = 'round';
+            c.beginPath(); c.moveTo(A0.x, A0.y); c.lineTo(ex0, ey0); c.stroke();
+            c.fillStyle = '#fff'; c.shadowColor = '#fff'; c.shadowBlur = 26; c.beginPath(); c.arc(ex0, ey0, 2.4, 0, 7); c.fill(); c.restore();
           }
         }
-        // phase 2: red slash from top-right to bottom-left
-        if (t >= 2.0) {
-          var rp = Math.max(0, Math.min(1, (t - 2.0) / 0.30));
-          var ax = W * 0.92, ay = -H * 0.05, bx = W * 0.08, by = H * 1.05;
-          var ex = ax + (bx - ax) * rp, ey = ay + (by - ay) * rp;
-          if (!redDone && rp >= 1) {
-            redDone = true;
-            for (var di = 0; di < strokes.length; di++) {
-              var st = strokes[di];
-              for (var k = 0; k < st.pts.length - 1; k++) {
-                var hit = segHit(st.pts[k].x, st.pts[k].y, st.pts[k + 1].x, st.pts[k + 1].y, ax, ay, bx, by);
-                if (hit) {
-                  var a1 = st.pts[k], b1 = st.pts[k + 1];
-                  [ [a1, hit], [hit, b1] ].forEach(function (pair) {
-                    var u = pair[0], v = pair[1], mx = (u.x + v.x) / 2, my = (u.y + v.y) / 2, len2 = Math.hypot(v.x - u.x, v.y - u.y);
-                    debris.push({ x: mx, y: my, ang: Math.atan2(v.y - u.y, v.x - u.x), len: len2, vx: rnd(-40, 40), vy: rnd(-60, 10), vr: rnd(-6, 6), life: 1.5, max: 1.5, color: st.color });
-                  });
-                  break;
-                }
-              }
-            }
-          }
-          // draw remaining strokes + debris
-          for (var sj = 0; sj < strokes.length; sj++) {
-            var s2 = strokes[sj]; c.save(); c.strokeStyle = s2.color; c.globalAlpha = .55; c.lineWidth = 1.2; c.beginPath();
-            for (var q2 = 0; q2 < s2.pts.length; q2++) { if (q2 === 0) c.moveTo(s2.pts[q2].x, s2.pts[q2].y); else c.lineTo(s2.pts[q2].x, s2.pts[q2].y); }
-            c.stroke(); c.restore();
-          }
-          for (var db = debris.length - 1; db >= 0; db--) {
-            var d = debris[db]; if (d.life <= 0) { debris.splice(db, 1); continue; }
-            c.save(); c.translate(d.x, d.y); c.rotate(d.ang); c.globalAlpha = Math.max(0, d.life / d.max); c.strokeStyle = d.color; c.shadowColor = d.color; c.shadowBlur = 8; c.lineWidth = 1.4;
-            c.beginPath(); c.moveTo(-d.len / 2, 0); c.lineTo(d.len / 2, 0); c.stroke(); c.restore();
-            d.x += d.vx * .016; d.y += d.vy * .016; d.vy += 900 * .016; d.ang += d.vr * .016; d.life -= .016;
-          }
-          c.save(); c.globalAlpha = rp; c.shadowColor = '#ff1f3d'; c.shadowBlur = 34; c.strokeStyle = '#ff334f'; c.lineWidth = 5;
-          c.beginPath(); c.moveTo(ax - (ax - ex), ay - (ay - ey)); c.lineTo(ex, ey); c.stroke();
-          c.strokeStyle = 'rgba(255,220,220,.9)'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(ax - (ax - ex), ay - (ay - ey)); c.lineTo(ex, ey); c.stroke(); c.restore();
+        var midA = { x: W * 0.04, y: H * 0.5 }, midB = { x: W * 0.96, y: H * 0.5 };
+        var mp0 = Math.max(0, Math.min(1, (t - 2.3) / 0.18));
+        if (mp0 > 0) {
+          var mx0 = midA.x + (midB.x - midA.x) * mp0;
+          c.save(); c.shadowColor = '#ffffff'; c.shadowBlur = 30; c.strokeStyle = 'rgba(255,240,240,.95)'; c.lineWidth = 4.2; c.lineCap = 'round';
+          c.beginPath(); c.moveTo(midA.x, midA.y); c.lineTo(mx0, midB.y); c.stroke(); c.restore();
         }
+        if (t >= 2.5 && wind.length === 0) for (var w0 = 0; w0 < 44; w0++) { var dir0 = Math.random() < .5 ? -1 : 1; wind.push({ x: W / 2 + rnd(-W * .3, W * .3), y: H / 2 + rnd(-8, 8), vx: dir0 * rnd(260, 720), vy: rnd(-20, 20), life: 0.6 }); }
+        if (t >= 2.9 && !broken) {
+          broken = true;
+          for (var s9 = 0; s9 < 6; s9++) { var e9 = order[s9], A9 = pts[e9[0]], B9 = pts[e9[1]]; for (var w9 = 0; w9 < 10; w9++) wind.push({ x: A9.x + (B9.x - A9.x) * Math.random(), y: A9.y + (B9.y - A9.y) * Math.random(), vx: rnd(-560, 560), vy: rnd(-260, 260), life: 0.6 }); }
+          for (var lb = 0; lb < lines.length; lb++) {
+            var LB = lines[lb], cuts = [];
+            for (var sb = 0; sb < 6; sb++) { var eb = order[sb], Ab = pts[eb[0]], Bb = pts[eb[1]], hb = segHit(Ab.x, Ab.y, Bb.x, Bb.y, LB.x, LB.y, LB.x + LB.w, LB.y); if (hb) cuts.push(hb.x); }
+            cuts.sort(function (a2, b2) { return a2 - b2; });
+            var xs = [LB.x].concat(cuts, [LB.x + LB.w]);
+            for (var kx = 0; kx < xs.length - 1; kx++) { if (xs[kx + 1] - xs[kx] < 4) continue; debris.push({ x: (xs[kx] + xs[kx + 1]) / 2, y: LB.y, ang: 0, len: xs[kx + 1] - xs[kx], vx: rnd(-30, 30), vy: rnd(-40, 10), vr: rnd(-3, 3), life: 1.4, max: 1.4, color: 'rgba(185,220,255,.85)' }); }
+          }
+        }
+        for (var wi0 = wind.length - 1; wi0 >= 0; wi0--) { var p0 = wind[wi0]; if (p0.life <= 0) { wind.splice(wi0, 1); continue; } c.save(); c.globalAlpha = Math.max(0, p0.life); c.strokeStyle = 'rgba(225,245,255,.85)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(p0.x, p0.y); c.lineTo(p0.x - p0.vx * 0.04, p0.y - p0.vy * 0.04); c.stroke(); c.restore(); p0.x += p0.vx * .016; p0.y += p0.vy * .016; p0.life -= .03; }
       } else if (fx === 'flame') {
         var L = [{ x: W * .1, y: H * .42, w: W * .8, h: 2 }, { x: W * .1, y: H * .56, w: W * .8, h: 2 }];
         var prog = Math.min(1, t / 3.0);
