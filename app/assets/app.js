@@ -328,7 +328,7 @@
     if (!black) { cb(); return; }
     state.introActive = true;
     chromeHide();
-    black.style.transitionDuration = '0.5s';
+    black.style.transitionDuration = Math.max(0.3, rec.fade) + 's';
     black.classList.add('show');
     function reveal() {
       black.classList.add('fadeout');
