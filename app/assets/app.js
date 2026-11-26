@@ -330,7 +330,7 @@
     cv.width = W * dpr; cv.height = H * dpr;
     var c = cv.getContext('2d'); c.scale(dpr, dpr);
     var t0 = performance.now(), ash = [], shards = [], wind = [], broken = false;
-    var lineEls = tw ? tw.querySelectorAll('.rt-line') : [], lines = [], prismBase = null, spotsP = [];
+    var lineEls = tw ? tw.querySelectorAll('.rt-line') : [], lines = [], prismBase = null, spotsP = [], fanCv = null, fanR = 0;
     function measureLines() {
       lines = [];
       for (var le = 0; le < lineEls.length; le++) {
@@ -435,71 +435,78 @@
         if (t < 0.1) tt.style.opacity = '1';
         var easeP = function (x) { return 1 - Math.pow(1 - x, 3); };
         var kk = 3;
-        // 0-0.9s 从右侧冲入
+        var slideOff = 0;
         if (t < 0.9) {
           var ph = easeP(Math.min(1, t / 0.8)), dx = (1 - ph) * Math.min(W * 0.7, 760);
           tt.style.transform = 'translateX(' + dx + 'px) skewX(' + ((1 - ph) * -8) + 'deg)';
-          tt.style.filter = 'blur(' + ((1 - ph) * 1.4) + 'px)';
+          tt.style.filter = 'blur(' + ((1 - ph) * 1.2) + 'px)';
           kk = Math.max(2, (1 - ph) * 8);
-        } else if (t < 2.6) {
-          tt.style.transform = 'translateX(0) scale(1.02)'; tt.style.filter = 'none'; kk = 3;
+        } else if (t < 2.55) {
+          tt.style.transform = 'translateX(0) scale(' + (1.02 + 0.012 * Math.sin(t * 9)) + ')'; tt.style.filter = 'none'; kk = 3;
         } else if (t < 3.4) {
-          var q = Math.min(1, (t - 2.6) / 0.8);
-          tt.style.transform = 'translateX(' + (-q * Math.min(W * 0.75, 820)) + 'px) scaleX(' + (1 + q * 0.12) + ') skewX(' + (-q * 9) + 'deg)';
+          var q = Math.min(1, (t - 2.55) / 0.85); slideOff = -q * Math.min(W * 0.75, 820);
+          tt.style.transform = 'translateX(' + slideOff + 'px) scaleX(' + (1 + q * 0.12) + ') skewX(' + (-q * 9) + 'deg)';
           kk = 3 + q * 7;
         } else if (t < 3.52) {
-          tt.style.transform = 'translateX(' + (-Math.min(W * 0.75, 820)) + 'px) scaleX(0.05)'; tt.style.opacity = '0';
-        }
-        tt.style.textShadow = (-kk) + 'px 0 rgba(255,40,80,.85), ' + kk + 'px 0 rgba(60,220,255,.85), 0 0 26px rgba(180,240,255,.6)';
-        // 标题快到位时（0.55s 起）起棱镜：向四周 360° 散开的七色漏斗
-        var tb0 = tt.getBoundingClientRect();
-        var ccx = tb0.left + tb0.width / 2, ccy = tb0.top + tb0.height / 2;
-        var burst = Math.min(1, Math.max(0, (t - 0.55) / 0.55));
-        var fade = t > 2.9 ? Math.max(0, 1 - (t - 2.9) / 0.62) : 1;
-        var rot = t > 2.6 ? (t - 2.6) * 1.6 : 0;
-        if (burst > 0.02 && fade > 0.01) {
+          slideOff = -Math.min(W * 0.75, 820);
+          tt.style.transform = 'translateX(' + slideOff + 'px) scaleX(0.05)'; tt.style.opacity = '0';
+        } else { slideOff = -Math.min(W * 0.75, 820); }
+        // 七色漏斗预渲染成一张图，旋转只做 drawImage
+        var R = Math.min(W, H) * 0.62;
+        if (!fanCv) {
+          var dprF = Math.min(1.6, window.devicePixelRatio || 1);
+          fanCv = document.createElement('canvas'); fanCv.width = R * 2 * dprF; fanCv.height = R * 2 * dprF;
+          var fg = fanCv.getContext('2d'); fg.scale(dprF, dprF); fg.globalCompositeOperation = 'lighter';
           var cols7 = ['#ff3b3b', '#ff9f1c', '#ffe066', '#4ade80', '#22d3ee', '#3b82f6', '#a855f7'];
-          var L = Math.min(W, H) * 0.62 * burst;
-          c.save(); c.globalCompositeOperation = 'lighter';
           for (var ci = 0; ci < 7; ci++) {
-            var a0 = rot + ci * (Math.PI * 2 / 7), half = (Math.PI / 7) * 0.58;
-            var rgc = c.createRadialGradient(ccx, ccy, 4, ccx, ccy, L);
-            rgc.addColorStop(0, 'rgba(255,255,255,.85)');
-            rgc.addColorStop(.20, cols7[ci]);
-            rgc.addColorStop(1, 'rgba(0,0,0,0)');
-            c.globalAlpha = 0.40 * fade; c.fillStyle = rgc;
-            c.beginPath(); c.moveTo(ccx, ccy); c.arc(ccx, ccy, L, a0 - half, a0 + half); c.closePath(); c.fill();
+            var a0 = ci * (Math.PI * 2 / 7), half = (Math.PI / 7) * 0.56;
+            var rgc = fg.createRadialGradient(R, R, 4, R, R, R);
+            rgc.addColorStop(0, 'rgba(255,255,255,.9)'); rgc.addColorStop(.22, cols7[ci]); rgc.addColorStop(1, 'rgba(0,0,0,0)');
+            fg.globalAlpha = 0.5; fg.fillStyle = rgc;
+            fg.beginPath(); fg.moveTo(R, R); fg.arc(R, R, R, a0 - half, a0 + half); fg.closePath(); fg.fill();
           }
-          var wg = c.createRadialGradient(ccx, ccy, 0, ccx, ccy, Math.max(40, L * 0.35));
-          wg.addColorStop(0, 'rgba(255,255,255,' + (0.55 * fade) + ')'); wg.addColorStop(1, 'rgba(255,255,255,0)');
-          c.globalAlpha = 1; c.fillStyle = wg; c.beginPath(); c.arc(ccx, ccy, Math.max(40, L * 0.35), 0, 7); c.fill();
+          var wg = fg.createRadialGradient(R, R, 0, R, R, R * 0.32);
+          wg.addColorStop(0, 'rgba(255,255,255,.85)'); wg.addColorStop(1, 'rgba(255,255,255,0)');
+          fg.globalAlpha = 1; fg.fillStyle = wg; fg.beginPath(); fg.arc(R, R, R * 0.32, 0, 7); fg.fill();
+          fanR = R;
+        }
+        var burst = Math.min(1, Math.max(0, (t - 0.55) / 0.5));
+        var fade = t > 2.9 ? Math.max(0, 1 - (t - 2.9) / 0.62) : 1;
+        var rot = t > 2.55 ? (t - 2.55) * 2.4 : 0;
+        var ccx = pcx + slideOff, ccy = pcy;
+        if (burst > 0.02 && fade > 0.01 && fanCv) {
+          c.save(); c.globalCompositeOperation = 'lighter'; c.translate(ccx, ccy); c.rotate(rot);
+          var sc = (0.55 + 0.45 * burst);
+          c.globalAlpha = 0.62 * fade; c.drawImage(fanCv, -fanR * sc, -fanR * sc, fanR * 2 * sc, fanR * 2 * sc);
+          c.globalAlpha = 0.22 * fade; c.strokeStyle = '#ffffff'; c.lineWidth = 2;
+          for (var sp0 = 0; sp0 < 3; sp0++) { var ra = sp0 * 2.1 + rot * 1.6; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(ra) * fanR * sc * .9, Math.sin(ra) * fanR * sc * .9); c.stroke(); }
           c.restore();
         }
-        // 标题七彩
+        // 标题本身：强化的七色渐变 + 呼吸 + 高光扫过
         var hit = Math.min(1, Math.max(0, (t - 0.6) / 0.45));
         if (hit > 0) {
           tt.style.color = 'transparent';
-          tt.style.backgroundImage = 'linear-gradient(90deg,#ff3b3b,#ff9f1c,#ffe066,#4ade80,#22d3ee,#3b82f6,#a855f7)';
-          tt.style.backgroundSize = '100% 100%';
+          tt.style.backgroundImage = 'linear-gradient(100deg,#ff3b3b,#ff9f1c,#ffe066,#4ade80,#22d3ee,#3b82f6,#a855f7 55%,#ffffff 62%,#a855f7 70%,#ff3b3b)';
+          tt.style.backgroundSize = '220% 100%';
+          tt.style.backgroundPosition = ((t * 90) % 200) + '% 0';
           tt.style.webkitBackgroundClip = 'text'; tt.style.backgroundClip = 'text';
-          tt.style.filter = 'brightness(' + (0.8 + 0.5 * hit) + ') drop-shadow(0 0 20px rgba(255,255,255,' + (0.45 * hit) + '))';
+          tt.style.filter = 'brightness(' + (0.85 + 0.45 * hit) + ') drop-shadow(0 0 12px rgba(255,120,200,' + (0.35 * hit) + ')) drop-shadow(0 0 26px rgba(120,220,255,' + (0.4 * hit) + '))';
         }
+        tt.style.textShadow = (-kk) + 'px 0 rgba(255,40,80,.9), ' + kk + 'px 0 rgba(60,220,255,.9), 0 0 26px rgba(180,240,255,.6)';
         tt.style.opacity = t > 3.6 ? String(Math.max(0, 1 - (t - 3.6) / 0.28)) : (tt.style.opacity === '0' ? '0' : '1');
-        // 光谱碎屑
-        if (t > 0.75 && t < 3.3 && shards.length < 90) {
-          for (var ss2 = 0; ss2 < 2; ss2++) shards.push({ x: pcx + rnd(-pb.width * .4, pb.width * .4), y: pcy + rnd(-10, 14), vx: rnd(-30, 30), vy: rnd(-40, 30), s: rnd(2, 5), a: rnd(0, 6.28), va: rnd(-2, 2), life: rnd(.5, 1.1), max: 1.1, col: ['#ff3b3b', '#ff9f1c', '#ffe066', '#4ade80', '#22d3ee', '#3b82f6', '#a855f7'][Math.floor(Math.random() * 7)] });
+        if (t > 0.75 && t < 3.3 && shards.length < 60) {
+          if (Math.random() < .7) shards.push({ x: ccx + rnd(-pb.width * .4, pb.width * .4), y: pcy + rnd(-10, 14), vx: rnd(-26, 26), vy: rnd(-30, 26), s: rnd(2, 4), a: rnd(0, 6.28), va: rnd(-2, 2), life: rnd(.4, .9), max: .9, col: ['#ff3b3b', '#ff9f1c', '#ffe066', '#4ade80', '#22d3ee', '#3b82f6', '#a855f7'][Math.floor(Math.random() * 7)] });
         }
         for (var sh3 = shards.length - 1; sh3 >= 0; sh3--) {
           var q3 = shards[sh3]; if (q3.life <= 0) { shards.splice(sh3, 1); continue; }
-          c.save(); c.globalCompositeOperation = 'lighter'; c.translate(q3.x, q3.y); c.rotate(q3.a); c.globalAlpha = Math.max(0, q3.life) * fade; c.fillStyle = q3.col; c.shadowColor = q3.col; c.shadowBlur = 12;
-          c.fillRect(-q3.s / 2, -q3.s / 2, q3.s, q3.s); c.restore();
-          q3.x += q3.vx * .016; q3.y += q3.vy * .016; q3.a += q3.va * .016; q3.life -= .012;
+          c.save(); c.globalCompositeOperation = 'lighter'; c.translate(q3.x, q3.y); c.globalAlpha = Math.max(0, q3.life) * fade; c.fillStyle = q3.col;
+          c.beginPath(); c.arc(0, 0, q3.s / 2, 0, 7); c.fill(); c.restore();
+          q3.x += q3.vx * .016; q3.y += q3.vy * .016; q3.life -= .014;
         }
-        // 地面光斑
-        if (t > 3.45 && spotsP.length < 60) { for (var pz = 0; pz < 4; pz++) spotsP.push({ x: pcx + rnd(-pb.width * .55, pb.width * .55), y: pb.bottom + 40 + rnd(-6, 10), s: rnd(1.5, 4), ph: rnd(0, 6.28), life: rnd(.5, 1.2) }); }
+        if (t > 3.45 && spotsP.length < 40) { for (var pz = 0; pz < 3; pz++) spotsP.push({ x: ccx + rnd(-pb.width * .55, pb.width * .55), y: pb.bottom + 40 + rnd(-6, 10), s: rnd(1.5, 4), ph: rnd(0, 6.28), life: rnd(.5, 1.2) }); }
         for (var pz2 = spotsP.length - 1; pz2 >= 0; pz2--) {
           var zt = spotsP[pz2]; if (zt.life <= 0) { spotsP.splice(pz2, 1); continue; }
-          c.save(); c.globalAlpha = Math.max(0, zt.life) * (.45 + .55 * Math.abs(Math.sin(performance.now() / 220 + zt.ph))); c.fillStyle = '#dff6ff'; c.shadowColor = '#9fe8ff'; c.shadowBlur = 16;
+          c.save(); c.globalAlpha = Math.max(0, zt.life) * (.45 + .55 * Math.abs(Math.sin(performance.now() / 220 + zt.ph))); c.fillStyle = '#dff6ff'; c.shadowColor = '#9fe8ff'; c.shadowBlur = 12;
           c.beginPath(); c.arc(zt.x, zt.y, zt.s, 0, 7); c.fill(); c.restore(); zt.life -= .01;
         }
       } else if (fx === 'neon') {
