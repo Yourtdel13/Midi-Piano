@@ -323,6 +323,92 @@
     return Math.max(0, (audio.ctx.currentTime - state.startCtx) * state.speed);
   }
 
+  function startTitleFx(fx, tw, tt) {
+    if (!fx || fx === 'none') return;
+    var cv = document.createElement('canvas'); cv.className = 'rt-fx'; tw.appendChild(cv);
+    var r = tw.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.max(2, r.width * dpr); cv.height = Math.max(2, r.height * dpr);
+    var c = cv.getContext('2d'); c.scale(dpr, dpr);
+    var lines = [];
+    var els = tw.querySelectorAll('.rt-line');
+    for (var i = 0; i < els.length; i++) { var b = els[i].getBoundingClientRect(); lines.push({ x: b.left - r.left, y: b.top - r.top, w: b.width, h: Math.max(2, b.height), el: els[i] }); }
+    if (tt && (fx === 'prism' || fx === 'neon')) tt.classList.add('fx-' + fx);
+    var t0 = performance.now(), ash = [], shards = [];
+    function frame(now) {
+      var t = (now - t0) / 1000, W = r.width, H = r.height; c.clearRect(0, 0, W, H);
+      if (fx === 'swords') {
+        for (var s = 0; s < 2; s++) {
+          var p = Math.max(0, Math.min(1, (t - s * 0.55) / 0.5)), dir = s ? 1 : -1;
+          if (t < 2.0) {
+            var sx = dir < 0 ? -80 + p * (W * 0.55 + 80) : W + 80 - p * (W * 0.55 + 80);
+            var sy = H * 0.18 + s * H * 0.08;
+            c.save(); c.translate(sx, sy); c.rotate(dir * -0.5);
+            var g = c.createLinearGradient(-90, 0, 90, 0); g.addColorStop(0, 'rgba(160,210,255,0)'); g.addColorStop(.5, 'rgba(210,240,255,.95)'); g.addColorStop(1, 'rgba(120,170,255,0)');
+            c.fillStyle = g; c.fillRect(-90, -1.6, 180, 3.2); c.restore();
+          }
+        }
+        if (t >= 2.0) {
+          for (var li = 0; li < lines.length; li++) {
+            var L = lines[li], cutX = W * (0.42 + 0.06 * li), off = Math.min(22, (t - 2.0) * 60);
+            c.fillStyle = '#05070f'; c.fillRect(L.x - 2, L.y - 6, L.w + 4, L.h + 12);
+            c.fillStyle = 'rgba(120,180,255,.35)';
+            c.fillRect(L.x, L.y - off, cutX - L.x, L.h); c.fillRect(cutX + 6, L.y - off, L.x + L.w - cutX - 6, L.h);
+            c.fillRect(L.x, L.y + off + 6, cutX - L.x, L.h); c.fillRect(cutX + 6, L.y + off + 6, L.x + L.w - cutX - 6, L.h);
+          }
+          var sa = Math.min(1, (t - 2.0) / 0.35);
+          c.save(); c.globalAlpha = sa; c.shadowColor = '#ff2b3d'; c.shadowBlur = 24; c.strokeStyle = '#ff3b4d'; c.lineWidth = 3;
+          c.beginPath(); c.moveTo(W * 0.30, -10); c.lineTo(W * 0.66, H + 10); c.stroke(); c.restore();
+        }
+      } else if (fx === 'flame') {
+        var prog = Math.min(1, t / 3.0);
+        for (var li2 = 0; li2 < lines.length; li2++) {
+          var L2 = lines[li2], front = L2.x + L2.w * (1 - prog);
+          var fg = c.createLinearGradient(L2.x, 0, front, 0);
+          fg.addColorStop(0, 'rgba(80,20,0,0)'); fg.addColorStop(.75, 'rgba(255,120,40,.35)'); fg.addColorStop(1, 'rgba(255,220,120,.95)');
+          c.fillStyle = fg; c.fillRect(L2.x, L2.y - 3, front - L2.x, L2.h + 6);
+          if (Math.random() < 0.6) ash.push({ x: front, y: L2.y + (Math.random() - 0.5) * 8, vx: -10 - Math.random() * 20, vy: 8 + Math.random() * 18, life: 0.8 });
+        }
+        for (var ai = ash.length - 1; ai >= 0; ai--) {
+          var p2 = ash[ai];
+          if (p2.life <= 0) { ash.splice(ai, 1); continue; }
+          c.globalAlpha = Math.max(0, p2.life); c.fillStyle = 'rgba(255,190,120,.8)';
+          c.fillRect(p2.x, p2.y, 1.5, 1.5); p2.x += p2.vx * 0.016; p2.y += p2.vy * 0.016; p2.life -= 0.016;
+        }
+        c.globalAlpha = 1;
+      } else if (fx === 'prism') {
+        var pg = c.createLinearGradient(0, 0, W, H);
+        pg.addColorStop(0, 'rgba(120,220,255,.16)'); pg.addColorStop(.5, 'rgba(247,37,133,.14)'); pg.addColorStop(1, 'rgba(255,209,102,.16)');
+        c.fillStyle = pg; c.fillRect(0, 0, W, H);
+        if (t >= 3.0 && shards.length === 0) {
+          var tb = tt.getBoundingClientRect();
+          for (var k = 0; k < 26; k++) shards.push({ x: tb.left - r.left + Math.random() * tb.width, y: tb.top - r.top + Math.random() * tb.height, vx: (Math.random() - .5) * 220, vy: (Math.random() - .5) * 180 - 40, rot: Math.random() * 6, vr: (Math.random() - .5) * 8, s: 3 + Math.random() * 7, life: 1.2 });
+        }
+        for (var sh = shards.length - 1; sh >= 0; sh--) {
+          var q = shards[sh];
+          if (q.life <= 0) { shards.splice(sh, 1); continue; }
+          c.save(); c.translate(q.x, q.y); c.rotate(q.rot); c.globalAlpha = Math.max(0, q.life);
+          c.fillStyle = ['#8fe8ff', '#ff8fd0', '#ffe08a'][sh % 3]; c.beginPath(); c.moveTo(0, -q.s); c.lineTo(q.s, q.s); c.lineTo(-q.s, q.s * .6); c.closePath(); c.fill(); c.restore();
+          q.x += q.vx * .016; q.y += q.vy * .016; q.vy += 260 * .016; q.rot += q.vr * .016; q.life -= .016;
+        }
+        c.globalAlpha = 1;
+      } else if (fx === 'neon') {
+        var a3 = 0.35 + 0.55 * Math.abs(Math.sin(t * 9));
+        c.strokeStyle = 'rgba(76,201,240,' + a3 + ')'; c.lineWidth = 2; c.shadowColor = '#f72585'; c.shadowBlur = 18;
+        c.strokeRect(6, 6, W - 12, H - 12);
+        if (t >= 3.0) { c.strokeStyle = 'rgba(255,255,255,.9)'; c.strokeRect(2, 2, W - 4, H - 4); }
+        c.shadowBlur = 0;
+      } else if (fx === 'ink') {
+        var grow = Math.min(1, t / 1.2), fade = t > 2.6 ? Math.max(0, 1 - (t - 2.6) / 0.4) : 1;
+        var rad = Math.max(W, H) * 0.55 * grow;
+        var ig = c.createRadialGradient(W / 2, H / 2, rad * 0.2, W / 2, H / 2, rad);
+        ig.addColorStop(0, 'rgba(220,235,255,' + (0.20 * fade) + ')'); ig.addColorStop(1, 'rgba(120,160,220,0)');
+        c.fillStyle = ig; c.fillRect(0, 0, W, H);
+      }
+      if (t < 3.25) requestAnimationFrame(frame); else { cv.remove(); if (tt) tt.classList.remove('fx-prism', 'fx-neon'); }
+    }
+    requestAnimationFrame(frame);
+  }
+
   function runIntro(cb) {
     var rec = state.look.rec, black = document.getElementById('recBlack'), tw = document.getElementById('recTitleWrap'), tt = document.getElementById('recTitle');
     if (!black) { cb(); return; }
@@ -343,6 +429,7 @@
         tt.className = rec.style || 'classic';
         tw.setAttribute('data-fx', rec.fx || 'none');
         tw.classList.add('show');
+        try { startTitleFx(rec.fx, tw, tt); } catch (e) { }
         setTimeout(function () { tw.classList.remove('show'); reveal(); }, 3000);
       } else {
         reveal();

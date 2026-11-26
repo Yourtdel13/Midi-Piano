@@ -690,3 +690,8 @@ body.chrome-off #btnLook, body.chrome-off #topOpen, body.chrome-off #controls, b
   background: radial-gradient(circle, rgba(220,235,255,.28), rgba(120,160,220,.12) 45%, transparent 70%); filter: blur(10px);
   animation: fxInk 3s ease-out forwards; }
 @keyframes fxInk { from { transform: scale(.5); opacity: 0; } 30% { opacity: 1; } to { transform: scale(1.6); opacity: .2; } }
+
+#recTitleWrap { position: fixed; }
+.rt-fx { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 86vw; height: 60vh; pointer-events: none; z-index: 3; }
+#recTitle.fx-prism { background: linear-gradient(120deg,#bff4ff,#ff9ad5 45%,#ffe08a 70%,#bff4ff); -webkit-background-clip: text; background-clip: text; color: transparent !important; filter: drop-shadow(0 0 18px rgba(140,220,255,.55)); }
+#recTitle.fx-neon { text-shadow: 0 0 12px #4cc9f0, 0 0 30px #f72585, 0 0 60px #4cc9f0; }
