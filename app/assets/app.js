@@ -402,19 +402,19 @@
             for (var sb = 0; sb < 6; sb++) { var eb = order[sb], Ab = pts[eb[0]], Bb = pts[eb[1]], hb = segHit(Ab.x, Ab.y, Bb.x, Bb.y, LB.x, LB.y, LB.x + LB.w, LB.y); if (hb) cuts.push(hb.x); }
             cuts.sort(function (a2, b2) { return a2 - b2; });
             var xs = [LB.x].concat(cuts, [LB.x + LB.w]);
-            for (var kx = 0; kx < xs.length - 1; kx++) { if (xs[kx + 1] - xs[kx] < 4) continue; debris.push({ x: (xs[kx] + xs[kx + 1]) / 2, y: LB.y, ang: 0, len: xs[kx + 1] - xs[kx], vx: rnd(-26, 26), vy: rnd(-30, 6), vr: rnd(-2.2, 2.2), life: 2.0, max: 2.0, color: '#f4fbff' });
+            for (var kx = 0; kx < xs.length - 1; kx++) { if (xs[kx + 1] - xs[kx] < 4) continue; debris.push({ x: (xs[kx] + xs[kx + 1]) / 2, y: LB.y, ang: 0, len: xs[kx + 1] - xs[kx], vx: rnd(-26, 26), vy: rnd(90, 220), vr: rnd(-2.2, 2.2), life: 3.2, max: 3.2, color: '#f4fbff' });
               for (var spk = 0; spk < 8; spk++) debris.push({ x: (xs[kx] + xs[kx + 1]) / 2 + rnd(-12, 12), y: LB.y + rnd(-4, 4), ang: 0, len: 2, vx: rnd(-90, 90), vy: rnd(-110, -20), vr: rnd(-3, 3), life: rnd(.6, 1.2), max: 1.2, color: '#dff4ff', spark: true }); }
           }
         }
         for (var wi0 = wind.length - 1; wi0 >= 0; wi0--) { var p0 = wind[wi0]; if (p0.life <= 0) { wind.splice(wi0, 1); continue; } c.save(); c.globalAlpha = Math.max(0, p0.life); c.strokeStyle = p0.red ? 'rgba(255,80,100,.98)' : 'rgba(235,250,255,.95)'; c.lineWidth = p0.red ? 3 : 2; c.beginPath(); c.moveTo(p0.x, p0.y); c.lineTo(p0.x - p0.vx * 0.04, p0.y - p0.vy * 0.04); c.stroke(); c.restore(); p0.x += p0.vx * .016; p0.y += p0.vy * .016; p0.life -= .03; }
         for (var db0 = debris.length - 1; db0 >= 0; db0--) {
           var d0 = debris[db0]; if (d0.life <= 0) { debris.splice(db0, 1); continue; }
-          c.save(); c.translate(d0.x, d0.y); c.rotate(d0.ang); c.globalAlpha = Math.max(0, d0.life / d0.max);
+          c.save(); c.translate(d0.x, d0.y); c.rotate(d0.ang); c.globalAlpha = d0.spark ? Math.max(0, d0.life / d0.max) : Math.max(0, Math.min(1, (H + 90 - d0.y) / (H * 0.18 + 90)));
           c.shadowColor = '#cfeaff'; c.shadowBlur = 24;
           if (d0.spark) { c.fillStyle = '#eaf7ff'; c.beginPath(); c.arc(0, 0, 2, 0, 7); c.fill(); }
           else { c.strokeStyle = '#f7fcff'; c.lineWidth = 3; c.beginPath(); c.moveTo(-d0.len / 2, 0); c.lineTo(d0.len / 2, 0); c.stroke(); }
           c.restore();
-          d0.x += d0.vx * .016; d0.y += d0.vy * .016; d0.vy += (d0.spark ? 280 : 620) * .016; d0.ang += d0.vr * .016; d0.life -= .016;
+          d0.x += d0.vx * .016; d0.y += d0.vy * .016; d0.vy += (d0.spark ? 280 : 1500) * .016; d0.ang += d0.vr * .016; d0.life -= .016;
         }
         c.restore();
       } else if (fx === 'flame') {
