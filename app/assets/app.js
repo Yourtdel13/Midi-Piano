@@ -21,7 +21,7 @@
     look: { bgBlur: 0, perfAuto: false, shape: 'capsule', fx: 'splash', gradient: 'random', pedal: true, topbar: true,
       amb: 'none', ambDensity: 1, barlines: false, fullscreen: false, sidebar: true,
       leftColor: 'red', rightColor: 'gold', dyn: true, tab: 'fx', freeMove: true, collapsed: false,
-      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, guiAlpha: 72, guiColor: 'navy', lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60, ext: { on: false, lines: 4, alpha: 85, mpl: 0, xoff: 0, yoff: 0, lineShift: 0 },
+      glow: 'none', glowL: 'none', glowR: 'none', glowLevel: 1, fps: false, stats: false, guiAlpha: 72, guiColor: 'navy', lineColor: 'none', linePower: 2, mistColor: 'none', mistOn: true, mistPower: 1, mistLife: 1.2, kbLen: 20, np: { on: true, region: 'tail', count: 1, lc: '', rc: '' }, pedalMix: 60, ext: { on: false, lines: 4, alpha: 85, mpl: 0, xoff: 0, yoff: 0, lineShift: 0 }, rec: { on: false, fade: 1.0, title: true, style: 'classic' },
       score: { on: true, glow: true, color: 'white', pos: 20, size: 0.9, glowLevel: 1, bgAlpha: 0.72 } },
     freePlay: false, ext: { imgs: [] }, freeBars: [], freePressed: {}, home: true, keyMarks: [], curKey: '',
     view: { zoom: 1, pan: 0, vzoom: 1 }, gesture: { pointers: {}, mode: null },
@@ -323,7 +323,37 @@
     return Math.max(0, (audio.ctx.currentTime - state.startCtx) * state.speed);
   }
 
+  function runIntro(cb) {
+    var rec = state.look.rec, black = document.getElementById('recBlack'), tw = document.getElementById('recTitleWrap'), tt = document.getElementById('recTitle');
+    if (!black) { cb(); return; }
+    state.introActive = true;
+    chromeHide();
+    black.classList.add('show');
+    setTimeout(function () {
+      if (rec.title && tt && tw) {
+        var name = state.title || 'MIDI 钢琴';
+        tt.textContent = name;
+        tt.className = rec.style || 'classic';
+        tw.classList.add('show');
+        setTimeout(function () {
+          tw.classList.remove('show');
+          black.classList.add('fadeout');
+          setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; cb(); }, 900);
+        }, 3000);
+      } else {
+        black.classList.add('fadeout');
+        setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; cb(); }, Math.max(300, rec.fade * 1000));
+      }
+    }, Math.max(300, rec.fade * 1000));
+  }
+
   function play() {
+    if (!state.notes.length) { toast('先导入一个 MIDI 文件'); return; }
+    if (state.look.rec && state.look.rec.on && !state.introActive && state.position < 0.05) { runIntro(playNow); return; }
+    playNow();
+  }
+
+  function playNow() {
     if (!state.notes.length) { toast('先导入一个 MIDI 文件'); return; }
     if (state.position >= state.duration - 0.05) state.position = 0;
     var ac = ensureAudio();
@@ -981,6 +1011,12 @@
       if (o && typeof o.lineColor === 'string' && (o.lineColor === 'none' || GLOWS[o.lineColor])) state.look.lineColor = o.lineColor;
       if (o && typeof o.guiAlpha === 'number') state.look.guiAlpha = Math.max(35, Math.min(100, Math.round(o.guiAlpha)));
       if (o && typeof o.guiColor === 'string' && GUI_HEX[o.guiColor]) state.look.guiColor = o.guiColor;
+      if (o && o.rec && typeof o.rec === 'object') {
+        if (typeof o.rec.on === 'boolean') state.look.rec.on = o.rec.on;
+        if (typeof o.rec.fade === 'number') state.look.rec.fade = Math.max(0.3, Math.min(2, o.rec.fade));
+        if (typeof o.rec.title === 'boolean') state.look.rec.title = o.rec.title;
+        if (typeof o.rec.style === 'string' && /^(classic|fade|scale)$/.test(o.rec.style)) state.look.rec.style = o.rec.style;
+      }
       if (o && o.ext && typeof o.ext === 'object') {
         if (typeof o.ext.on === 'boolean') state.look.ext.on = o.ext.on;
         if (typeof o.ext.lines === 'number') state.look.ext.lines = Math.max(1, Math.min(8, Math.round(o.ext.lines)));
@@ -1133,6 +1169,14 @@
     for (var gl = 0; gl < gll.length; gl++) gll[gl].classList.toggle('active', gll[gl].getAttribute('data-glowl') === state.look.glowL);
     var glr = document.querySelectorAll('#glowROpts .opt');
     for (var gr = 0; gr < glr.length; gr++) glr[gr].classList.toggle('active', glr[gr].getAttribute('data-glowr') === state.look.glowR);
+    var rOn = document.querySelectorAll('#recOnOpts .opt');
+    for (var ro = 0; ro < rOn.length; ro++) rOn[ro].classList.toggle('active', (rOn[ro].getAttribute('data-rec') === 'on') === !!state.look.rec.on);
+    var rT = document.querySelectorAll('#recTitleOpts .opt');
+    for (var rt = 0; rt < rT.length; rt++) rT[rt].classList.toggle('active', (rT[rt].getAttribute('data-rectitle') === 'on') === !!state.look.rec.title);
+    var rS = document.querySelectorAll('#recStyleOpts .opt');
+    for (var rs = 0; rs < rS.length; rs++) rS[rs].classList.toggle('active', rS[rs].getAttribute('data-recstyle') === state.look.rec.style);
+    var rf = $('recFade'); if (rf) rf.value = String(Math.round(state.look.rec.fade * 10));
+    var rfv = $('recFadeVal'); if (rfv) rfv.textContent = state.look.rec.fade.toFixed(1) + 's';
     var exOn = document.querySelectorAll('#extOnOpts .opt');
     for (var eo = 0; eo < exOn.length; eo++) exOn[eo].classList.toggle('active', (exOn[eo].getAttribute('data-ext') === 'on') === !!state.look.ext.on);
     var exL = $('extLines'); if (exL) exL.value = String(state.look.ext.lines);
@@ -2840,6 +2884,7 @@
     });
     var exLs = $('extLines'); if (exLs) exLs.addEventListener('input', function () { state.look.ext.lines = Math.max(1, Math.min(8, +this.value || 4)); var v = $('extLinesVal'); if (v) v.textContent = String(state.look.ext.lines); saveLook(); draw(); });
     var exAs = $('extAlpha'); if (exAs) exAs.addEventListener('input', function () { state.look.ext.alpha = Math.max(20, Math.min(100, +this.value || 85)); var v = $('extAlphaVal'); if (v) v.textContent = state.look.ext.alpha + '%'; saveLook(); draw(); });
+    var rf = $('recFade'); if (rf) rf.addEventListener('input', function () { state.look.rec.fade = Math.max(0.3, Math.min(2, (+this.value || 10) / 10)); var v = $('recFadeVal'); if (v) v.textContent = state.look.rec.fade.toFixed(1) + 's'; saveLook(); });
     var lg = $('logExport'); if (lg) lg.addEventListener('click', exportLog);
     $('btnMidi').addEventListener('click', function () { $('midiFile').click(); });
     $('btnBg').addEventListener('click', function () { showBgMenu(); });
@@ -2917,6 +2962,9 @@
         if (b.hasAttribute('data-line')) state.look.lineColor = b.getAttribute('data-line');
         if (b.hasAttribute('data-guicolor')) state.look.guiColor = b.getAttribute('data-guicolor');
         if (b.hasAttribute('data-ext')) state.look.ext.on = b.getAttribute('data-ext') === 'on';
+        if (b.hasAttribute('data-rec')) state.look.rec.on = b.getAttribute('data-rec') === 'on';
+        if (b.hasAttribute('data-rectitle')) state.look.rec.title = b.getAttribute('data-rectitle') === 'on';
+        if (b.hasAttribute('data-recstyle')) state.look.rec.style = b.getAttribute('data-recstyle');
         if (b.hasAttribute('data-line')) applyGui();
         if (b.hasAttribute('data-mist')) state.look.mistColor = b.getAttribute('data-mist');
         if (b.hasAttribute('data-linelevel')) state.look.linePower = Math.max(0, Math.min(3, +b.getAttribute('data-linelevel') || 0));
@@ -3259,7 +3307,24 @@
     var tn = $('tutNext'); if (tn) tn.addEventListener('click', function () { if (tutIdx < TUT.length - 1) { tutIdx++; renderTut(); } else closeTutorial(); });
   }
 
+  function wrapSections() {
+    document.querySelectorAll('.sheet-pane').forEach(function (pane) {
+      var nodes = Array.prototype.slice.call(pane.childNodes);
+      var box = null;
+      nodes.forEach(function (node) {
+        if (node.nodeType === 1 && node.classList.contains('sheet-label')) {
+          box = document.createElement('div'); box.className = 'sec-box';
+          node.classList.remove('sheet-label'); node.classList.add('sec-head');
+          box.appendChild(node); pane.insertBefore(box, node.nextSibling);
+        } else if (box && (node.nodeType !== 1 || (node.nodeType === 1))) {
+          box.appendChild(node);
+        }
+      });
+    });
+  }
+
   function start() {
+    wrapSections();
     (function initPdfWorker() {
       if (!window.pdfjsLib) return;
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
