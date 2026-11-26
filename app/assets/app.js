@@ -468,22 +468,39 @@
         var fade = t > 3.05 ? Math.max(0, 1 - (t - 3.05) / 0.45) : 1;
         var ccx = pcx + slideOff, ccy = pcy;
         var nBeam = (t < 0.7) ? 0 : Math.min(7, Math.floor((t - 0.7) / 0.2) + 1);
-        c.save(); c.globalCompositeOperation = 'lighter';
-        for (var bi = 0; bi < nBeam; bi++) {
-          var age = t - (0.7 + bi * 0.2); if (age <= 0) continue;
-          var ramp = Math.min(1, age / 0.12), a0 = bi * (Math.PI * 2 / 7), half = (Math.PI / 7) * 0.55;
-          var rgc = c.createRadialGradient(ccx, ccy, 4, ccx, ccy, R);
-          rgc.addColorStop(0, 'rgba(255,255,255,.9)'); rgc.addColorStop(.22, cols7[bi]); rgc.addColorStop(1, 'rgba(0,0,0,0)');
-          c.globalAlpha = 0.45 * ramp * fade; c.fillStyle = rgc;
-          c.beginPath(); c.moveTo(ccx, ccy); c.arc(ccx, ccy, R, a0 - half, a0 + half); c.closePath(); c.fill();
+        if (!fanCv) {
+          var dprF = Math.min(1.5, window.devicePixelRatio || 1);
+          fanCv = document.createElement('canvas'); fanCv.width = R * 2 * dprF; fanCv.height = R * 2 * dprF;
+          var fg = fanCv.getContext('2d'); fg.scale(dprF, dprF); fg.globalCompositeOperation = 'lighter';
+          for (var ci = 0; ci < 7; ci++) {
+            var a0f = ci * (Math.PI * 2 / 7), halff = (Math.PI / 7) * 0.55;
+            var rgf = fg.createRadialGradient(R, R, 4, R, R, R);
+            rgf.addColorStop(0, 'rgba(255,255,255,.9)'); rgf.addColorStop(.22, cols7[ci]); rgf.addColorStop(1, 'rgba(0,0,0,0)');
+            fg.globalAlpha = 0.45; fg.fillStyle = rgf;
+            fg.beginPath(); fg.moveTo(R, R); fg.arc(R, R, R, a0f - halff, a0f + halff); fg.closePath(); fg.fill();
+          }
+          var wgf = fg.createRadialGradient(R, R, 0, R, R, R * 0.30);
+          wgf.addColorStop(0, 'rgba(255,255,255,.8)'); wgf.addColorStop(1, 'rgba(255,255,255,0)');
+          fg.globalAlpha = 1; fg.fillStyle = wgf; fg.beginPath(); fg.arc(R, R, R * 0.30, 0, 7); fg.fill();
+          fanR = R;
         }
-        if (t >= 2.05) {
-          var rot = t > 2.5 ? (t - 2.5) * 0.9 : 0;
-          c.globalAlpha = 0.34 * fade; c.fillStyle = 'rgba(255,255,255,.85)';
-          c.beginPath(); c.arc(ccx, ccy, R * 0.30, 0, 7); c.fill();
-          if (rot > 0) {
+        c.save(); c.globalCompositeOperation = 'lighter';
+        if (t < 2.05) {
+          for (var bi2 = 0; bi2 < nBeam; bi2++) {
+            var age2 = t - (0.7 + bi2 * 0.2); if (age2 <= 0) continue;
+            var ramp2 = Math.min(1, age2 / 0.12), a2b = bi2 * (Math.PI * 2 / 7), half2 = (Math.PI / 7) * 0.55;
+            var rg2 = c.createRadialGradient(ccx, ccy, 4, ccx, ccy, R);
+            rg2.addColorStop(0, 'rgba(255,255,255,.9)'); rg2.addColorStop(.22, cols7[bi2]); rg2.addColorStop(1, 'rgba(0,0,0,0)');
+            c.globalAlpha = 0.45 * ramp2 * fade; c.fillStyle = rg2;
+            c.beginPath(); c.moveTo(ccx, ccy); c.arc(ccx, ccy, R, a2b - half2, a2b + half2); c.closePath(); c.fill();
+          }
+        } else if (fanCv) {
+          var rot2 = t > 2.5 ? (t - 2.5) * 0.9 : 0;
+          c.translate(ccx, ccy); c.rotate(rot2);
+          c.globalAlpha = 0.62 * fade; c.drawImage(fanCv, -fanR, -fanR, fanR * 2, fanR * 2);
+          if (rot2 > 0) {
             c.globalAlpha = 0.55 * fade; c.strokeStyle = '#ffffff'; c.lineWidth = 1.1;
-            for (var sp0 = 0; sp0 < 3; sp0++) { var ra = sp0 * 2.1 + rot; c.beginPath(); c.moveTo(ccx, ccy); c.lineTo(ccx + Math.cos(ra) * R * .85, ccy + Math.sin(ra) * R * .85); c.stroke(); }
+            for (var sp0 = 0; sp0 < 3; sp0++) { var ra2 = sp0 * 2.1; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(ra2) * fanR * .85, Math.sin(ra2) * fanR * .85); c.stroke(); }
           }
         }
         c.restore();
