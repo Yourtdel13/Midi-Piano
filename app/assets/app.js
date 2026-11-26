@@ -451,27 +451,28 @@
           tt.style.transform = 'translateX(' + (-Math.min(W * 0.75, 820)) + 'px) scaleX(0.05)'; tt.style.opacity = '0';
         }
         tt.style.textShadow = (-kk) + 'px 0 rgba(255,40,80,.85), ' + kk + 'px 0 rgba(60,220,255,.85), 0 0 26px rgba(180,240,255,.6)';
-        // 标题快到位时（0.55s 起）起棱镜：七色漏斗扇形折射
+        // 标题快到位时（0.55s 起）起棱镜：向四周 360° 散开的七色漏斗
+        var tb0 = tt.getBoundingClientRect();
+        var ccx = tb0.left + tb0.width / 2, ccy = tb0.top + tb0.height / 2;
         var burst = Math.min(1, Math.max(0, (t - 0.55) / 0.55));
-        var fade = t > 2.6 ? Math.max(0, 1 - (t - 2.6) / 0.95) : 1;
+        var fade = t > 2.9 ? Math.max(0, 1 - (t - 2.9) / 0.62) : 1;
+        var rot = t > 2.6 ? (t - 2.6) * 1.6 : 0;
         if (burst > 0.02 && fade > 0.01) {
           var cols7 = ['#ff3b3b', '#ff9f1c', '#ffe066', '#4ade80', '#22d3ee', '#3b82f6', '#a855f7'];
-          var L = Math.min(H * 0.72, 860) * burst;
-          var baseA = Math.PI / 2;
+          var L = Math.min(W, H) * 0.62 * burst;
           c.save(); c.globalCompositeOperation = 'lighter';
           for (var ci = 0; ci < 7; ci++) {
-            var a0 = baseA + (ci - 3) * 0.17, half = 0.105;
-            var rgc = c.createRadialGradient(pcx, pcy, 4, pcx, pcy, L);
-            rgc.addColorStop(0, 'rgba(255,255,255,.75)');
-            rgc.addColorStop(.18, cols7[ci]);
+            var a0 = rot + ci * (Math.PI * 2 / 7), half = (Math.PI / 7) * 0.58;
+            var rgc = c.createRadialGradient(ccx, ccy, 4, ccx, ccy, L);
+            rgc.addColorStop(0, 'rgba(255,255,255,.85)');
+            rgc.addColorStop(.20, cols7[ci]);
             rgc.addColorStop(1, 'rgba(0,0,0,0)');
-            c.globalAlpha = 0.42 * fade;
-            c.fillStyle = rgc;
-            c.beginPath(); c.moveTo(pcx, pcy);
-            c.arc(pcx, pcy, L, a0 - half, a0 + half); c.closePath(); c.fill();
+            c.globalAlpha = 0.40 * fade; c.fillStyle = rgc;
+            c.beginPath(); c.moveTo(ccx, ccy); c.arc(ccx, ccy, L, a0 - half, a0 + half); c.closePath(); c.fill();
           }
-          c.globalAlpha = 0.30 * fade; c.fillStyle = 'rgba(255,255,255,.55)';
-          c.beginPath(); c.moveTo(pcx, pcy); c.arc(pcx, pcy, L * 0.92, baseA - 0.055, baseA + 0.055); c.closePath(); c.fill();
+          var wg = c.createRadialGradient(ccx, ccy, 0, ccx, ccy, Math.max(40, L * 0.35));
+          wg.addColorStop(0, 'rgba(255,255,255,' + (0.55 * fade) + ')'); wg.addColorStop(1, 'rgba(255,255,255,0)');
+          c.globalAlpha = 1; c.fillStyle = wg; c.beginPath(); c.arc(ccx, ccy, Math.max(40, L * 0.35), 0, 7); c.fill();
           c.restore();
         }
         // 标题七彩
