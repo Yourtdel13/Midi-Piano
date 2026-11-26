@@ -328,6 +328,7 @@
     if (!black) { cb(); return; }
     state.introActive = true;
     chromeHide();
+    black.style.transitionDuration = Math.max(0.3, rec.fade) + 's';
     black.classList.add('show');
     setTimeout(function () {
       if (rec.title && tt && tw) {
@@ -338,11 +339,11 @@
         setTimeout(function () {
           tw.classList.remove('show');
           black.classList.add('fadeout');
-          setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; cb(); }, 900);
+          setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; cb(true); }, 900);
         }, 3000);
       } else {
         black.classList.add('fadeout');
-        setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; cb(); }, Math.max(300, rec.fade * 1000));
+        setTimeout(function () { black.classList.remove('show', 'fadeout'); state.introActive = false; cb(true); }, Math.max(300, rec.fade * 1000));
       }
     }, Math.max(300, rec.fade * 1000));
   }
@@ -353,7 +354,7 @@
     playNow();
   }
 
-  function playNow() {
+  function playNow(keepHidden) {
     if (!state.notes.length) { toast('先导入一个 MIDI 文件'); return; }
     if (state.position >= state.duration - 0.05) state.position = 0;
     var ac = ensureAudio();
@@ -369,7 +370,7 @@
     updatePlayButton();
     bumpControls();
     showBpmBubble();
-    chromeShow();
+    if (keepHidden) chromeHide(); else chromeShow();
     startScheduler();
   }
 
@@ -1013,7 +1014,7 @@
       if (o && typeof o.guiColor === 'string' && GUI_HEX[o.guiColor]) state.look.guiColor = o.guiColor;
       if (o && o.rec && typeof o.rec === 'object') {
         if (typeof o.rec.on === 'boolean') state.look.rec.on = o.rec.on;
-        if (typeof o.rec.fade === 'number') state.look.rec.fade = Math.max(0.3, Math.min(2, o.rec.fade));
+        if (typeof o.rec.fade === 'number') state.look.rec.fade = Math.max(0.3, Math.min(4, o.rec.fade));
         if (typeof o.rec.title === 'boolean') state.look.rec.title = o.rec.title;
         if (typeof o.rec.style === 'string' && /^(classic|fade|scale)$/.test(o.rec.style)) state.look.rec.style = o.rec.style;
       }
@@ -2884,7 +2885,7 @@
     });
     var exLs = $('extLines'); if (exLs) exLs.addEventListener('input', function () { state.look.ext.lines = Math.max(1, Math.min(8, +this.value || 4)); var v = $('extLinesVal'); if (v) v.textContent = String(state.look.ext.lines); saveLook(); draw(); });
     var exAs = $('extAlpha'); if (exAs) exAs.addEventListener('input', function () { state.look.ext.alpha = Math.max(20, Math.min(100, +this.value || 85)); var v = $('extAlphaVal'); if (v) v.textContent = state.look.ext.alpha + '%'; saveLook(); draw(); });
-    var rf = $('recFade'); if (rf) rf.addEventListener('input', function () { state.look.rec.fade = Math.max(0.3, Math.min(2, (+this.value || 10) / 10)); var v = $('recFadeVal'); if (v) v.textContent = state.look.rec.fade.toFixed(1) + 's'; saveLook(); });
+    var rf = $('recFade'); if (rf) rf.addEventListener('input', function () { state.look.rec.fade = Math.max(0.3, Math.min(4, (+this.value || 10) / 10)); var v = $('recFadeVal'); if (v) v.textContent = state.look.rec.fade.toFixed(1) + 's'; saveLook(); });
     var lg = $('logExport'); if (lg) lg.addEventListener('click', exportLog);
     $('btnMidi').addEventListener('click', function () { $('midiFile').click(); });
     $('btnBg').addEventListener('click', function () { showBgMenu(); });
